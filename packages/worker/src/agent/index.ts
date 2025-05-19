@@ -24,6 +24,7 @@ import {
   DefaultWorkingDirectory,
   fileEditTool,
   getPRCommentsTool,
+  readImageTool,
   replyPRCommentTool,
   reportProgressTool,
   sendImageTool,
@@ -177,6 +178,7 @@ Users will primarily request software engineering assistance including bug fixes
     sendImageTool,
     getPRCommentsTool,
     replyPRCommentTool,
+    readImageTool,
   ];
   const toolConfig: ConverseCommandInput['toolConfig'] = {
     tools: [
@@ -308,7 +310,12 @@ Users will primarily request software engineering assistance including bug fixes
             }
 
             console.log(`using tool: ${name} ${JSON.stringify(input)}`);
-            toolResult = await tool.handler(input);
+            const result = await tool.handler(input);
+            if (typeof result == 'string') {
+              toolResult = result;
+            } else {
+              toolResultObject = result;
+            }
           }
 
           if (name == reportProgressTool.name) {
