@@ -6,7 +6,7 @@ import { Sha256 } from '@aws-crypto/sha256-js';
 const httpEndpoint = process.env.EVENT_HTTP_ENDPOINT!;
 const region = process.env.AWS_REGION!;
 
-export async function sendEvent(workerId: string, type: string, payload: object = {}) {
+export async function sendEvent(channelName: string, payload: unknown) {
   if (httpEndpoint == null) {
     console.log(`event api is not configured!`);
     return;
@@ -24,8 +24,8 @@ export async function sendEvent(workerId: string, type: string, payload: object 
     },
     hostname: url.host,
     body: JSON.stringify({
-      channel: `event-bus/${workerId}`,
-      events: [JSON.stringify({ type, payload })],
+      channel: `event-bus/${channelName}`,
+      events: [JSON.stringify({ payload })],
     }),
     path: url.pathname,
   });

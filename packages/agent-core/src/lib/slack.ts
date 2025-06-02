@@ -1,10 +1,9 @@
 import { App, AwsLambdaReceiver, LogLevel } from '@slack/bolt';
 import { readFileSync } from 'fs';
+import { sendWebappEvent } from './';
+import { SlackBotToken, SlackChannelId, SlackThreadTs, WorkerId } from '../env';
 
-const BotToken = process.env.SLACK_BOT_TOKEN!;
-const channelID = process.env.SLACK_CHANNEL_ID!;
-const threadTs = process.env.SLACK_THREAD_TS!;
-const disableSlack = process.env.DISABLE_SLACK == 'true'; // for debugging
+const disableSlack = !(SlackChannelId && SlackThreadTs);
 
 export const receiver = new AwsLambdaReceiver({
   // We don't need signingSecret because we use slack bolt only to send messages here.
@@ -16,7 +15,7 @@ let app: App | undefined = undefined;
 const getApp = () => {
   if (app) return app;
   app = new App({
-    token: BotToken,
+    token: SlackBotToken,
     receiver,
     logLevel: LogLevel.DEBUG,
     developerMode: true,
@@ -31,7 +30,7 @@ const getApp = () => {
  */
 const processMessageForLinks = (message: string): string => {
   // Look for http:// or https://
-  const parts = message.split(/(https?:\/\/)/g);
+  const parts = message.trim().split(/(https?:\/\/)/g);
   let result = '';
 
   for (let i = 0; i < parts.length; i++) {
@@ -52,7 +51,7 @@ const processMessageForLinks = (message: string): string => {
   return result;
 };
 
-export const sendMessageToSlack = async (message: string, progress = false) => {
+export const sendMessageToSlack = async (message: string) => {
   if (disableSlack) {
     console.log(`[Slack] ${message}`);
     return;
@@ -61,9 +60,13 @@ export const sendMessageToSlack = async (message: string, progress = false) => {
   // Process message to ensure proper URL linking
   const processedMessage = processMessageForLinks(message);
 
+  if (!processedMessage) {
+    return;
+  }
+
   await getApp().client.chat.postMessage({
-    channel: channelID,
-    thread_ts: threadTs,
+    channel: SlackChannelId,
+    thread_ts: SlackThreadTs,
     // limit to 40000 chars https://api.slack.com/methods/chat.postMessage#truncating
     text: processedMessage.slice(0, 40000),
     blocks: [
@@ -92,8 +95,8 @@ export const sendFileToSlack = async (imagePath: string, message: string) => {
   const processedMessage = processMessageForLinks(message);
 
   const result = await getApp().client.filesUploadV2({
-    channel_id: channelID,
-    thread_ts: threadTs,
+    channel_id: SlackChannelId,
+    thread_ts: SlackThreadTs,
     initial_comment: processedMessage,
     filename: fileName,
     file: imageBuffer,

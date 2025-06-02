@@ -6,11 +6,14 @@ import path from 'path';
 import { tmpdir } from 'os';
 import { ddb, TableName } from './aws/ddb';
 import { writeBytesToKey, getBytesFromKey } from './aws/s3';
+import { renderUserMessage } from './prompt';
+import { sendWebappEvent } from './events';
+import { sendMessageToSlack } from './slack';
 
 // Maximum input token count before applying middle-out strategy
 export const MAX_INPUT_TOKEN = 80_000;
 
-type MessageItem = {
+export type MessageItem = {
   PK: string;
   SK: string;
   /**
@@ -313,4 +316,11 @@ const postProcessMessageContent = async (content: string) => {
   }
 
   return flattenedArray;
+};
+
+export const sendSystemMessage = async (workerId: string, message: string) => {
+  await Promise.all([
+    sendWebappEvent(workerId, { type: 'message', role: 'assistant', message }),
+    sendMessageToSlack(message),
+  ]);
 };

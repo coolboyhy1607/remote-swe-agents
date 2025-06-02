@@ -11,6 +11,9 @@ import {
   saveConversationHistory,
   saveConversationHistoryAtomic,
   updateMessageTokenCount,
+  readMetadata,
+  renderToolResult,
+  sendSystemMessage,
 } from '@remote-swe-agents/agent-core/lib';
 import pRetry, { AbortError } from 'p-retry';
 import { bedrockConverse } from '@remote-swe-agents/agent-core/lib';
@@ -28,7 +31,7 @@ import {
   sendImageTool,
 } from '@remote-swe-agents/agent-core/tools';
 import { findRepositoryKnowledge } from './lib/knowledge';
-import { readMetadata, renderToolResult, sendMessageToSlack, setKillTimer } from '@remote-swe-agents/agent-core/lib';
+import { sendWebappEvent } from '@remote-swe-agents/agent-core/lib';
 import { CancellationToken } from '../common/cancellation-token';
 
 export const onMessageReceived = async (workerId: string, cancellationToken: CancellationToken) => {
@@ -215,7 +218,6 @@ Users will primarily request software engineering assistance including bug fixes
       async () => {
         try {
           if (cancellationToken.isCancelled) return;
-          setKillTimer();
 
           const res = await bedrockConverse(workerId, ['sonnet3.7'], {
             messages,
@@ -261,12 +263,18 @@ Users will primarily request software engineering assistance including bug fixes
       const toolUseMessage = res.output.message;
       const toolUseRequests = toolUseMessage.content?.filter((c) => 'toolUse' in c) ?? [];
       const toolResultMessage: Message = { role: 'user', content: [] };
+
       for (const request of toolUseRequests) {
         const toolUse = request.toolUse;
         const toolUseId = toolUse?.toolUseId;
         if (toolUse == null || toolUseId == null) {
           throw new Error('toolUse is null');
         }
+        await sendWebappEvent(workerId, {
+          type: 'toolUse',
+          toolName: toolUse.name ?? '',
+          input: JSON.stringify(toolUse.input),
+        });
         let toolResult = '';
         let toolResultObject: ToolResultContentBlock[] | undefined = undefined;
         try {
@@ -342,6 +350,7 @@ Users will primarily request software engineering assistance including bug fixes
             ],
           },
         });
+        await sendWebappEvent(workerId, { type: 'toolResult', toolName: toolUse.name ?? '' });
       }
 
       // Save both tool use and tool result messages atomically to DynamoDB
@@ -359,18 +368,17 @@ Users will primarily request software engineering assistance including bug fixes
       if (finalMessage?.content == null || finalMessage.content?.length == 0) {
         // It seems this happens sometimes. We can just ignore this message.
         console.log('final message is empty. ignoring...');
-        if (mention) {
-          await sendMessageToSlack(mention);
-        }
+        await sendSystemMessage(workerId, mention);
         break;
       }
+
       // Save assistant message with token count
       await saveConversationHistory(workerId, finalMessage, outputTokenCount, 'assistant');
       // When reasoning is enabled, reasoning results are in content[0].
       const responseText = finalMessage.content?.at(-1)?.text ?? '';
       // remove <thinking> </thinking> part with multiline support
       const responseTextWithoutThinking = responseText.replace(/<thinking>[\s\S]*?<\/thinking>/g, '');
-      await sendMessageToSlack(`${mention}${responseTextWithoutThinking}`);
+      await sendSystemMessage(workerId, `${mention}${responseTextWithoutThinking}`);
       break;
     }
   }

@@ -2,10 +2,11 @@ import { Amplify } from 'aws-amplify';
 import { events } from 'aws-amplify/data';
 import { onMessageReceived, resume } from './agent';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
-import { WorkerId } from './common/constants';
 import './common/signal-handler';
-import { sendMessageToSlack, setKillTimer } from '@remote-swe-agents/agent-core/lib';
+import { setKillTimer, pauseKillTimer, restartKillTimer } from './common/kill-timer';
 import { CancellationToken } from './common/cancellation-token';
+import { sendMessageToSlack, sendSystemMessage } from '@remote-swe-agents/agent-core/lib';
+import { WorkerId } from '@remote-swe-agents/agent-core/env';
 
 Object.assign(global, { WebSocket: require('ws') });
 
@@ -46,24 +47,33 @@ class ConverseSessionTracker {
   public startOnMessageReceived() {
     const session = { isFinished: false, cancellationToken: new CancellationToken() };
     this.sessions.push(session);
+    // temporarily pause kill timer when an agent loop is running
+    const restartToken = pauseKillTimer();
     onMessageReceived(this.workerId, session.cancellationToken)
       .then(() => {
         session.isFinished = true;
       })
       .catch((e) => {
-        sendMessageToSlack(`An error occurred: ${e}`).catch((e) => console.log(e));
+        sendSystemMessage(workerId, `An error occurred: ${e}`).catch((e) => console.log(e));
+      })
+      .finally(() => {
+        restartKillTimer(restartToken);
       });
   }
 
   public startResume() {
     const session = { isFinished: false, cancellationToken: new CancellationToken() };
     this.sessions.push(session);
+    const restartToken = pauseKillTimer();
     resume(this.workerId, session.cancellationToken)
       .then(() => {
         session.isFinished = true;
       })
       .catch((e) => {
-        sendMessageToSlack(`An error occurred: ${e}`).catch((e) => console.log(e));
+        sendSystemMessage(workerId, `An error occurred: ${e}`).catch((e) => console.log(e));
+      })
+      .finally(() => {
+        restartKillTimer(restartToken);
       });
   }
 
@@ -93,10 +103,9 @@ const main = async () => {
     error: (err) => console.error('error', err),
   });
 
-  const unicast = await events.connect(`/event-bus/${workerId}`);
+  const unicast = await events.connect(`/event-bus/worker/${workerId}`);
   unicast.subscribe({
     next: async (data) => {
-      setKillTimer();
       const type = data.event?.type;
       if (type == 'onMessageReceived') {
         tracker.cancelCurrentSessions();
@@ -109,10 +118,10 @@ const main = async () => {
   setKillTimer();
 
   try {
-    await sendMessageToSlack('the instance has successfully launched!');
+    await sendSystemMessage(workerId, 'the instance has successfully launched!');
     tracker.startResume();
   } catch (e) {
-    await sendMessageToSlack(`An error occurred: ${e}`);
+    await sendSystemMessage(workerId, `An error occurred: ${e}`);
   }
 };
 

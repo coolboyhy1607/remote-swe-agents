@@ -1,6 +1,5 @@
 import { App, AwsLambdaReceiver, LogLevel } from '@slack/bolt';
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { sendEvent } from './util/events';
 import { saveConversationHistory, getConversationHistory, getTokenUsage, saveSessionInfo } from './util/history';
 import { makeIdempotent } from './util/idempotency';
 import { ApproveUsers, isAuthorized } from './util/auth';
@@ -12,6 +11,7 @@ import { s3, BucketName } from '@remote-swe-agents/agent-core/aws';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { IdempotencyAlreadyInProgressError } from '@aws-lambda-powertools/idempotency';
 import { AsyncHandlerEvent } from './async-handler';
+import { sendWorkerEvent } from '../../agent-core/src/lib';
 
 const SigningSecret = process.env.SIGNING_SECRET!;
 const BotToken = process.env.BOT_TOKEN!;
@@ -205,7 +205,7 @@ app.event('app_mention', async ({ event, client, logger }) => {
 
       const promises = [
         saveConversationHistory(workerId, message, userId, imageKeys),
-        sendEvent(workerId, 'onMessageReceived'),
+        sendWorkerEvent(workerId, { type: 'onMessageReceived' }),
         lambda.send(
           new InvokeCommand({
             FunctionName: AsyncLambdaName,
