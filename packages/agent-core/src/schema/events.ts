@@ -18,4 +18,9 @@ export const webappEventSchema = z.discriminatedUnion('type', [
     toolName: z.string(),
     timestamp: z.number(),
   }),
+  z.object({
+    type: z.literal('instanceStatusChanged'),
+    status: z.union([z.literal('starting'), z.literal('running'), z.literal('sleeping')]),
+    timestamp: z.number(),
+  }),
 ]);

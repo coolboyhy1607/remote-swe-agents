@@ -1,11 +1,46 @@
 import { EC2Client, DescribeInstancesCommand, RunInstancesCommand, StartInstancesCommand } from '@aws-sdk/client-ec2';
 import { GetParameterCommand, ParameterNotFound, SSMClient } from '@aws-sdk/client-ssm';
+import { UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { ddb, TableName } from './aws';
+import { sendWebappEvent } from './events';
 
 const LaunchTemplateId = process.env.WORKER_LAUNCH_TEMPLATE_ID!;
 const WorkerAmiParameterName = process.env.WORKER_AMI_PARAMETER_NAME ?? '';
 const SubnetIdList = process.env.SUBNET_ID_LIST?.split(',') ?? [];
 const ec2Client = new EC2Client({});
 const ssmClient = new SSMClient({});
+
+/**
+ * Updates the instance status in DynamoDB and sends a webapp event
+ */
+export async function updateInstanceStatus(workerId: string, status: 'starting' | 'running' | 'sleeping') {
+  try {
+    // Update the instanceStatus in DynamoDB
+    await ddb.send(
+      new UpdateCommand({
+        TableName,
+        Key: {
+          PK: 'sessions',
+          SK: workerId,
+        },
+        UpdateExpression: 'SET instanceStatus = :status',
+        ExpressionAttributeValues: {
+          ':status': status,
+        },
+      })
+    );
+
+    // Send event to webapp
+    await sendWebappEvent(workerId, {
+      type: 'instanceStatusChanged',
+      status,
+    });
+
+    console.log(`Instance status updated to ${status}`);
+  } catch (error) {
+    console.error(`Error updating instance status for workerId ${workerId}:`, error);
+  }
+}
 
 async function findStoppedWorkerInstance(workerId: string) {
   return findWorkerInstanceWithStatus(workerId, ['running', 'stopped']);
@@ -148,6 +183,7 @@ export async function getOrCreateWorkerInstance(
   // Then, check if a stopped instance exists and start it
   const stoppedInstanceId = await findStoppedWorkerInstance(workerId);
   if (stoppedInstanceId) {
+    await updateInstanceStatus(workerId, 'starting');
     await restartWorkerInstance(stoppedInstanceId);
     return { instanceId: stoppedInstanceId, oldStatus: 'stopped' };
   }
@@ -155,6 +191,7 @@ export async function getOrCreateWorkerInstance(
   // choose subnet randomly
   const subnetId = SubnetIdList[Math.floor(Math.random() * SubnetIdList.length)];
   // If no instance exists, create a new one
+  await updateInstanceStatus(workerId, 'starting');
   const { instanceId, usedCache } = await createWorkerInstance(
     workerId,
     slackChannelId,
