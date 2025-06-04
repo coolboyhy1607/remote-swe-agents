@@ -12,12 +12,19 @@ import { webappEventSchema } from '@remote-swe-agents/agent-core/schema';
 interface SessionPageClientProps {
   workerId: string;
   initialMessages: Message[];
+  initialInstanceStatus?: 'starting' | 'running' | 'sleeping' | 'terminated';
 }
 
-export default function SessionPageClient({ workerId, initialMessages }: SessionPageClientProps) {
+export default function SessionPageClient({
+  workerId,
+  initialMessages,
+  initialInstanceStatus,
+}: SessionPageClientProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [isAgentTyping, setIsAgentTyping] = useState(false);
-  const [instanceStatus, setInstanceStatus] = useState<'starting' | 'running' | 'sleeping' | undefined>(undefined);
+  const [instanceStatus, setInstanceStatus] = useState<'starting' | 'running' | 'sleeping' | 'terminated' | undefined>(
+    initialInstanceStatus
+  );
 
   // Real-time communication via event bus
   useEventBus({
