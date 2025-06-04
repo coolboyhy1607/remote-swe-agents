@@ -1,11 +1,13 @@
-import { getSession } from '@/lib/auth';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Bot, Zap } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 export default async function Home() {
-  const { userId } = await getSession();
+  const t = await getTranslations('home');
+  const sessionsT = await getTranslations('sessions');
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
@@ -14,23 +16,20 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="text-center py-16">
             <Bot className="w-16 h-16 text-blue-600 dark:text-blue-400 mx-auto mb-6" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Remote SWE Agents</h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Interact with AI agents to efficiently advance your software development tasks. Real-time code creation,
-              debugging, and review capabilities.
-            </p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">{t('title')}</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">{t('description')}</p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link href="/sessions">
                 <Button size="lg" className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
-                  Chat with AI Agent
+                  {sessionsT('title')}
                 </Button>
               </Link>
               <Link href="/sessions/new">
                 <Button variant="outline" size="lg" className="flex items-center gap-2">
                   <Zap className="w-5 h-5" />
-                  New Session
+                  {sessionsT('newSession')}
                 </Button>
               </Link>
             </div>
