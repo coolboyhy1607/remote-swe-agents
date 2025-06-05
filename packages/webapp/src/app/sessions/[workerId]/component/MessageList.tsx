@@ -1,17 +1,19 @@
 'use client';
 
-import { Bot, User, Loader2, Clock } from 'lucide-react';
+import { Bot, User, Loader2, Clock, Info, Settings, Code, Terminal } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  detail?: string;
   timestamp: Date;
   type: 'message' | 'toolResult' | 'toolUse';
 };
@@ -79,6 +81,44 @@ export default function MessageList({ messages, isAgentTyping, instanceStatus }:
     </ReactMarkdown>
   );
 
+  const ToolUseRenderer = ({ content, input }: { content: string; input: string | undefined }) => {
+    const [showRawJson, setShowRawJson] = useState(false);
+
+    const toolName = content;
+
+    const getToolIcon = (name: string) => {
+      if (name.includes('execute') || name.includes('Command')) return <Terminal className="w-4 h-4" />;
+      if (name.includes('file') || name.includes('edit')) return <Code className="w-4 h-4" />;
+      return <Settings className="w-4 h-4" />;
+    };
+
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          {getToolIcon(toolName)}
+          <span className="font-semibold">
+            {t('usingTool')}: {toolName}
+          </span>
+          {input && (
+            <button
+              onClick={() => setShowRawJson(!showRawJson)}
+              className="flex items-center gap-1 text-yellow-600 dark:text-yellow-400 hover:underline text-xs ml-2"
+            >
+              <Info className="w-3 h-3" />
+              {showRawJson ? t('hideRawJson') : t('showRawJson')}
+            </button>
+          )}
+        </div>
+
+        {input && showRawJson && (
+          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded overflow-auto max-h-60">
+            <pre className="text-xs">{input}</pre>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -106,7 +146,11 @@ export default function MessageList({ messages, isAgentTyping, instanceStatus }:
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                 }`}
               >
-                <MarkdownRenderer content={message.content} />
+                {message.type === 'toolUse' ? (
+                  <ToolUseRenderer content={message.content} input={message.detail} />
+                ) : (
+                  <MarkdownRenderer content={message.content} />
+                )}
                 <div className={`text-xs mt-2 ${'text-gray-500 dark:text-gray-400'}`}>
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </div>
