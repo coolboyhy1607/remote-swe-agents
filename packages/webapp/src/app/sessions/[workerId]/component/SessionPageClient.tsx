@@ -58,7 +58,7 @@ export default function SessionPageClient({
         case 'toolResult':
           break;
         case 'toolUse':
-          if (event.toolName === 'sendMessageToUser') {
+          if (['sendMessageToUser', 'sendMessageToUserIfNecessary'].includes(event.toolName)) {
             setMessages((prev) => [
               ...prev,
               {

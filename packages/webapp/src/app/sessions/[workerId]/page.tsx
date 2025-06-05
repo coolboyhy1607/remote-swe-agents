@@ -28,7 +28,8 @@ export default async function SessionPage({ params }: SessionPageProps) {
     switch (item.messageType) {
       case 'toolUse': {
         const ret: Message[] = [];
-        const isMsg = (toolName: string | undefined) => toolName == 'sendMessageToUser';
+        const isMsg = (toolName: string | undefined) =>
+          ['sendMessageToUser', 'sendMessageToUserIfNecessary'].includes(toolName ?? '');
         const messages = message.content?.filter((block) => isMsg(block.toolUse?.name)) ?? [];
         if (messages && messages.length > 0) {
           ret.push({

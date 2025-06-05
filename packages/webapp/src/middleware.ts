@@ -3,6 +3,9 @@ import type { NextRequest } from 'next/server';
 import { fetchAuthSession } from 'aws-amplify/auth/server';
 import { runWithAmplifyServerContext } from '@/lib/amplifyServerUtils';
 
+// This file is critical for webapp authentication mechanism.
+// DO NOT remove any existing logic if you are not sure!
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
