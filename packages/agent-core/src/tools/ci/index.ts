@@ -13,6 +13,10 @@ const inputSchema = z.object({
 
 const getLatestRunResult = async (input: { owner: string; repo: string; pullRequestId: string }) => {
   const { owner, repo, pullRequestId } = input;
+  // If it is executed too soon, the workflow might not be queued yet, resulting in an empty success.
+  // To avoid it, we wait a bit here.
+  await setTimeout(5000);
+
   while (true) {
     try {
       const latestRun = await getLatestRunStatus(owner, repo, pullRequestId);
