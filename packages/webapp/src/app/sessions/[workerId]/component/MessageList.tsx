@@ -7,7 +7,8 @@ import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/pris
 import remarkGfm from 'remark-gfm';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useScrollPosition } from '@/hooks/use-scroll-position';
 
 export type Message = {
   id: string;
@@ -27,6 +28,13 @@ type MessageListProps = {
 export default function MessageList({ messages, isAgentTyping, instanceStatus }: MessageListProps) {
   const { theme } = useTheme();
   const t = useTranslations('sessions');
+  const positionRatio = useScrollPosition();
+
+  useEffect(() => {
+    if (positionRatio > 0.95) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const showWaitingMessage = instanceStatus === 'starting';
   const MarkdownRenderer = ({ content }: { content: string }) => (

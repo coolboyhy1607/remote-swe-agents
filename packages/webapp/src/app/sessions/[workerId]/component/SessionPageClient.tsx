@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import MessageForm from './MessageForm';
 import MessageList, { Message } from './MessageList';
 import { webappEventSchema } from '@remote-swe-agents/agent-core/schema';
 import { useTranslations } from 'next-intl';
+import { useScrollPosition } from '@/hooks/use-scroll-position';
 
 interface SessionPageClientProps {
   workerId: string;
@@ -31,7 +32,7 @@ export default function SessionPageClient({
   // Real-time communication via event bus
   useEventBus({
     channelName: `webapp/worker/${workerId}`,
-    onReceived: (payload: unknown) => {
+    onReceived: useCallback((payload: unknown) => {
       console.log('Received event:', payload);
       const event = webappEventSchema.parse(payload);
 
@@ -52,7 +53,6 @@ export default function SessionPageClient({
           setIsAgentTyping(false);
           break;
         case 'instanceStatusChanged':
-          console.log('Instance status changed:', event.status);
           setInstanceStatus(event.status);
           break;
         case 'toolResult':
@@ -85,7 +85,7 @@ export default function SessionPageClient({
           setIsAgentTyping(true);
           break;
       }
-    },
+    }, []),
   });
 
   const onSendMessage = async (message: Message) => {
@@ -93,11 +93,18 @@ export default function SessionPageClient({
     setIsAgentTyping(true);
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const scrollToBottom = () => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      <Header />
-
-      <main className="flex-grow flex flex-col">
+      <div className="sticky top-0 z-10">
+        <Header />
         <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
           <div className="max-w-4xl mx-auto flex items-center gap-4">
             <Link
@@ -135,10 +142,32 @@ export default function SessionPageClient({
             </div>
           </div>
         </div>
+      </div>
 
+      <main className="flex-grow flex flex-col relative">
         <MessageList messages={messages} isAgentTyping={isAgentTyping} instanceStatus={instanceStatus} />
 
         <MessageForm onSubmit={onSendMessage} workerId={workerId} />
+
+        {/* Scroll buttons */}
+        <div className="fixed bottom-24 right-6 flex flex-col gap-2 z-10">
+          <button
+            onClick={scrollToTop}
+            className="p-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 focus:outline-none"
+            title={t('scrollToTop')}
+            aria-label={t('scrollToTop')}
+          >
+            <ArrowLeft className="w-5 h-5 rotate-90" />
+          </button>
+          <button
+            onClick={scrollToBottom}
+            className="p-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 focus:outline-none"
+            title={t('scrollToBottom')}
+            aria-label={t('scrollToBottom')}
+          >
+            <ArrowLeft className="w-5 h-5 -rotate-90" />
+          </button>
+        </div>
       </main>
     </div>
   );
