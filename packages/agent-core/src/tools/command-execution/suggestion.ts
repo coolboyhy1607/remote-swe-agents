@@ -12,7 +12,7 @@ export const generateSuggestion = (command: string, success: boolean): string | 
   if (command.toLowerCase().includes('git push')) {
     if (success) {
       suggestion.push(
-        'Remember, when you pushed commits to a git pull request, make sure you check the CI status and fix the code until it passes.'
+        'Remember, when you push git commits, make sure you check the CI status and fix the code until it passes.'
       );
     }
   }
