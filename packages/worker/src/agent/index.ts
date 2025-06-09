@@ -30,6 +30,8 @@ import {
   replyPRCommentTool,
   reportProgressTool,
   sendImageTool,
+  todoInitTool,
+  todoUpdateTool,
 } from '@remote-swe-agents/agent-core/tools';
 import { findRepositoryKnowledge } from './lib/knowledge';
 import { sendWebappEvent } from '@remote-swe-agents/agent-core/lib';
@@ -141,6 +143,7 @@ Users will primarily request software engineering assistance including bug fixes
    - Files to modify and how
    - Potential risks or challenges
    - REMEMBER: Only start implementation after receiving explicit confirmation from the user on your plan
+   - Use ${todoInitTool.name} tool to manage your execution plan as a todo list.
 2. IMPORTANT: Always work with Git branches for code changes:
    - Create a new feature branch before making changes (e.g. feature/fix-login-bug)
    - Make your changes in this branch, not directly on the default branch to ensure changes are isolated
@@ -186,6 +189,8 @@ Users will primarily request software engineering assistance including bug fixes
     getPRCommentsTool,
     replyPRCommentTool,
     readImageTool,
+    todoInitTool,
+    todoUpdateTool,
   ];
   const toolConfig: ConverseCommandInput['toolConfig'] = {
     tools: [
