@@ -6,14 +6,13 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useEventBus } from '@/hooks/use-event-bus';
 import MessageForm from './MessageForm';
-import MessageList, { Message } from './MessageList';
+import MessageList, { MessageView } from './MessageList';
 import { webappEventSchema } from '@remote-swe-agents/agent-core/schema';
 import { useTranslations } from 'next-intl';
-import { useScrollPosition } from '@/hooks/use-scroll-position';
 
 interface SessionPageClientProps {
   workerId: string;
-  initialMessages: Message[];
+  initialMessages: MessageView[];
   initialInstanceStatus?: 'starting' | 'running' | 'stopped' | 'terminated';
 }
 
@@ -23,7 +22,7 @@ export default function SessionPageClient({
   initialInstanceStatus,
 }: SessionPageClientProps) {
   const t = useTranslations('sessions');
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<MessageView[]>(initialMessages);
   const [isAgentTyping, setIsAgentTyping] = useState(false);
   const [instanceStatus, setInstanceStatus] = useState<'starting' | 'running' | 'stopped' | 'terminated' | undefined>(
     initialInstanceStatus
@@ -56,6 +55,13 @@ export default function SessionPageClient({
           setInstanceStatus(event.status);
           break;
         case 'toolResult':
+          setMessages((prev) => {
+            const toolUse = prev.findLast((msg) => msg.type == 'toolUse');
+            if (toolUse && toolUse.output == undefined) {
+              toolUse.output = event.output;
+            }
+            return prev;
+          });
           break;
         case 'toolUse':
           if (['sendMessageToUser', 'sendMessageToUserIfNecessary'].includes(event.toolName)) {
@@ -88,7 +94,7 @@ export default function SessionPageClient({
     }, []),
   });
 
-  const onSendMessage = async (message: Message) => {
+  const onSendMessage = async (message: MessageView) => {
     setMessages((prev) => [...prev, message]);
     setIsAgentTyping(true);
   };
