@@ -372,13 +372,23 @@ app.event('message', async ({ event, client, logger }) => {
     files?: any[];
   };
 
-  // Skip if message has no text, is from a bot, or has a subtype
-  if (!messageEvent.text || messageEvent.bot_id || messageEvent.subtype) {
+  // Skip if from a bot
+  if (messageEvent.bot_id) {
+    return;
+  }
+
+  // Skip if no text AND no files (empty message)
+  if (!messageEvent.text && !messageEvent.files?.length) {
+    return;
+  }
+
+  // Skip certain subtypes but allow those with files
+  if (messageEvent.subtype && !messageEvent.files?.length) {
     return;
   }
 
   // Skip if message mentions this bot (will be handled by app_mention)
-  if (botId && messageEvent.text.includes(`<@${botId}>`)) {
+  if (botId && messageEvent.text && messageEvent.text.includes(`<@${botId}>`)) {
     console.log('Message contains mention to this bot, skipping to avoid duplication');
     return;
   }
@@ -386,7 +396,8 @@ app.event('message', async ({ event, client, logger }) => {
   // Create event object with guaranteed non-undefined text property
   const safeEvent = {
     ...messageEvent,
-    text: messageEvent.text,
+    // Ensure text is always a string (fallback to empty string if undefined)
+    text: messageEvent.text || '',
   };
 
   // Process thread replies
