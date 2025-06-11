@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare, Clock, DollarSign } from 'lucide-react';
 import { getSessions } from '@remote-swe-agents/agent-core/lib';
 import { getTranslations } from 'next-intl/server';
+import { RefreshOnFocus } from '@/components/RefreshOnFocus';
 
 export default async function SessionsPage() {
   const sessions = await getSessions();
@@ -12,6 +13,7 @@ export default async function SessionsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       <Header />
+      <RefreshOnFocus />
 
       <main className="flex-grow">
         <div className="max-w-4xl mx-auto px-4 py-8">

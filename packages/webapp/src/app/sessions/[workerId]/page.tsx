@@ -2,6 +2,7 @@ import { getConversationHistory, getSession, getTodoList, noOpFiltering } from '
 import SessionPageClient from './component/SessionPageClient';
 import { MessageView } from './component/MessageList';
 import { notFound } from 'next/navigation';
+import { RefreshOnFocus } from '@/components/RefreshOnFocus';
 
 interface SessionPageProps {
   params: Promise<{
@@ -124,11 +125,14 @@ export default async function SessionPage({ params }: SessionPageProps) {
   const todoList = await getTodoList(workerId);
 
   return (
-    <SessionPageClient
-      workerId={workerId}
-      initialMessages={messages}
-      initialInstanceStatus={session.instanceStatus}
-      initialTodoList={todoList}
-    />
+    <>
+      <SessionPageClient
+        workerId={workerId}
+        initialMessages={messages}
+        initialInstanceStatus={session.instanceStatus}
+        initialTodoList={todoList}
+      />
+      <RefreshOnFocus />
+    </>
   );
 }
