@@ -7,6 +7,10 @@ export const sendMessageToAgentSchema = z.object({
   imageKeys: z.array(z.string()).optional(),
 });
 
+export const fetchTodoListSchema = z.object({
+  workerId: z.string(),
+});
+
 export const updateAgentStatusSchema = z.object({
   workerId: z.string(),
   status: agentStatusSchema,
