@@ -77,7 +77,6 @@ export default async function SessionPage({ params }: SessionPageProps) {
         const results = (message.content ?? []).filter((c) => c.toolResult != undefined);
 
         if (results.length > 0) {
-          console.log('toolResult set');
           const detail = results
             .map(
               (block) =>
