@@ -129,9 +129,12 @@ export default function MessageList({ messages, isAgentTyping, instanceStatus }:
           return !isInline ? (
             <SyntaxHighlighter
               style={theme === 'dark' ? oneDark : oneLight}
+              lineProps={{ style: { wordBreak: 'break-word', whiteSpace: 'pre-wrap' } }}
               language={match[1]}
               PreTag="div"
               className="rounded-md"
+              wrapLines
+              wrapLongLines
             >
               {String(children).replace(/\n$/, '')}
             </SyntaxHighlighter>
