@@ -2,19 +2,23 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
-import { ArrowLeft, ListChecks, Plus } from 'lucide-react';
+import { ArrowLeft, ListChecks, CheckCircle, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useAction } from 'next-safe-action/hooks';
+import { updateAgentStatus } from '../actions';
 import { useEventBus } from '@/hooks/use-event-bus';
 import MessageForm from './MessageForm';
 import MessageList, { MessageView } from './MessageList';
-import { webappEventSchema, TodoList as TodoListType } from '@remote-swe-agents/agent-core/schema';
+import { webappEventSchema, TodoList as TodoListType, AgentStatus } from '@remote-swe-agents/agent-core/schema';
 import { useTranslations } from 'next-intl';
 import TodoList from './TodoList';
+import { toast } from 'sonner';
 
 interface SessionPageClientProps {
   workerId: string;
   initialMessages: MessageView[];
   initialInstanceStatus?: 'starting' | 'running' | 'stopped' | 'terminated';
+  initialAgentStatus?: AgentStatus;
   initialTodoList: TodoListType | null;
 }
 
@@ -22,6 +26,7 @@ export default function SessionPageClient({
   workerId,
   initialMessages,
   initialInstanceStatus,
+  initialAgentStatus,
   initialTodoList,
 }: SessionPageClientProps) {
   const t = useTranslations('sessions');
@@ -30,6 +35,7 @@ export default function SessionPageClient({
   const [instanceStatus, setInstanceStatus] = useState<'starting' | 'running' | 'stopped' | 'terminated' | undefined>(
     initialInstanceStatus
   );
+  const [agentStatus, setAgentStatus] = useState<AgentStatus | undefined>(initialAgentStatus);
   const [todoList, setTodoList] = useState<TodoListType | null>(initialTodoList);
   const [showTodoModal, setShowTodoModal] = useState(false);
 
@@ -111,6 +117,15 @@ export default function SessionPageClient({
   const scrollToBottom = () => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   };
+
+  const { execute: executeUpdateStatus } = useAction(updateAgentStatus, {
+    onSuccess: () => {
+      setAgentStatus('completed');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update session status: ${error}`);
+    },
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -205,7 +220,7 @@ export default function SessionPageClient({
 
         <MessageForm onSubmit={onSendMessage} workerId={workerId} />
 
-        {/* Scroll buttons */}
+        {/* Scroll buttons and actions */}
         <div className="fixed bottom-24 right-6 flex flex-col gap-2 z-10">
           <button
             onClick={scrollToTop}
@@ -223,6 +238,22 @@ export default function SessionPageClient({
           >
             <ArrowLeft className="w-5 h-5 -rotate-90" />
           </button>
+          {/* Mark as completed button - only show if not already completed */}
+          {agentStatus !== 'completed' && (
+            <button
+              onClick={() =>
+                executeUpdateStatus({
+                  workerId,
+                  status: 'completed',
+                })
+              }
+              className="p-2 bg-green-600 text-white rounded-full shadow-md hover:bg-green-700 focus:outline-none cursor-pointer"
+              title={t('markAsCompleted')}
+              aria-label={t('markAsCompleted')}
+            >
+              <CheckCircle className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </main>
     </div>
