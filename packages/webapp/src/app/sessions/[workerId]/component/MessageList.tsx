@@ -359,7 +359,7 @@ export default function MessageList({ messages, instanceStatus, agentStatus }: M
                 </div>
                 <div className="font-semibold text-gray-900 dark:text-white">Assistant</div>
               </div>
-              <div className="ml-11">
+              <div className="md:ml-11">
                 <div className="flex items-center gap-2 py-1">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-gray-600 dark:text-gray-300">
