@@ -34,7 +34,7 @@ export default async function ApiKeysPage() {
                     <h3 className="text-lg font-medium mb-2">{documentationT('authentication')}</h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-2">{documentationT('authDesc')}</p>
                     <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-x-auto">
-                      <code>x-api-key: YOUR_API_KEY</code>
+                      <code>X-API-KEY: YOUR_API_KEY</code>
                     </pre>
                   </div>
 
@@ -42,7 +42,7 @@ export default async function ApiKeysPage() {
                     <h3 className="text-lg font-medium mb-2">{documentationT('createSession')}</h3>
                     <p className="text-gray-600 dark:text-gray-300 mb-2">{documentationT('createSessionDesc')}</p>
                     <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-x-auto">
-                      <code>{`POST /api/sessions/
+                      <code>{`POST /api/sessions
 
 {
   "message": "Your initial message to the agent"
@@ -80,9 +80,9 @@ export default async function ApiKeysPage() {
                     <p className="text-gray-600 dark:text-gray-300 mb-2">{documentationT('exampleCreateSession')}</p>
                     <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-x-auto">
                       <code>{`curl -X POST \\
-  ${AppOrigin}/api/sessions/ \\
+  ${AppOrigin}/api/sessions \\
   -H "Content-Type: application/json" \\
-  -H "x-api-key: YOUR_API_KEY" \\
+  -H "X-API-KEY: YOUR_API_KEY" \\
   -d '{"message": "Create a React component for a user profile page"}'`}</code>
                     </pre>
 
@@ -91,7 +91,7 @@ export default async function ApiKeysPage() {
                       <code>{`curl -X POST \\
   ${AppOrigin}/api/sessions/api-1234567890 \\
   -H "Content-Type: application/json" \\
-  -H "x-api-key: YOUR_API_KEY" \\
+  -H "X-API-KEY: YOUR_API_KEY" \\
   -d '{"message": "Add dark mode support to the component"}'`}</code>
                     </pre>
                   </div>

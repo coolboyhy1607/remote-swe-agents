@@ -7,10 +7,9 @@ import { ApiKeyItem } from '@remote-swe-agents/agent-core/schema';
 import { useAction } from 'next-safe-action/hooks';
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { Copy, Loader2, Plus, Trash2 } from 'lucide-react';
-import { z } from 'zod';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -159,7 +158,10 @@ export default function ApiKeyClientActions({ apiKeys }: ApiKeyClientActionsProp
               <p className="text-gray-500 dark:text-gray-400 text-center py-4">{t('noKeys')}</p>
             )}
             {apiKeys.map((key: ApiKeyItem) => (
-              <div key={key.SK} className="flex items-center justify-between p-4 border rounded-md bg-card">
+              <div
+                key={key.SK}
+                className="flex items-center justify-between p-4 border rounded-md bg-card dark:bg-gray-800"
+              >
                 <div className="flex-1">
                   <div className="text-sm font-medium">{key.description || t('unnamedKey')}</div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
