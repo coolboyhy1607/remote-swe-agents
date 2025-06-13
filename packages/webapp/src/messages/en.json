@@ -8,7 +8,8 @@
     "menu": "Menu",
     "language": "Language",
     "promptSettings": "Prompt Settings",
-    "apiKeys": "API Keys"
+    "apiKeys": "API Keys",
+    "costAnalysis": "Cost Analysis"
   },
   "sessions": {
     "title": "Sessions",
@@ -75,7 +76,52 @@
   "home": {
     "title": "Welcome to Remote SWE Agents",
     "description": "Remote SWE Agents allows you to collaborate with AI-powered software engineers to help with your projects.",
-    "getStarted": "Get Started"
+    "getStarted": "Get Started",
+    "costAnalysis": "Cost Analysis"
+  },
+  "cost": {
+    "title": "Cost Analysis",
+    "description": "Analyze the usage costs and token consumption of AI agents",
+    "totalCost": "Total Cost",
+    "totalTokens": "Total Tokens",
+    "inputOutputTokens": "Token Breakdown",
+    "input": "Input",
+    "output": "Output",
+    "cacheRead": "Cache Read",
+    "cacheWrite": "Cache Write",
+    "tokenUsageBreakdown": "Token Usage Breakdown",
+    "costBreakdown": "Cost Breakdown",
+    "costBreakdownDescription": "Detailed cost breakdown by session and model",
+    "bySession": "By Session",
+    "byModel": "By Model",
+    "sessionId": "Session ID",
+    "initialPrompt": "Initial Prompt",
+    "date": "Date",
+    "cost": "Cost",
+    "model": "Model",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens",
+    "cacheTokens": "Cache Tokens",
+    "noSessionData": "No session data available",
+    "noModelData": "No model data available",
+    "noMessage": "No initial message",
+    "total": "Total",
+    "period": "Period",
+    "yearSuffix": "{year}",
+    "monthNames": {
+      "1": "Jan",
+      "2": "Feb",
+      "3": "Mar",
+      "4": "Apr",
+      "5": "May",
+      "6": "Jun",
+      "7": "Jul",
+      "8": "Aug",
+      "9": "Sep",
+      "10": "Oct",
+      "11": "Nov",
+      "12": "Dec"
+    }
   },
   "auth": {
     "signIn": "Sign In",

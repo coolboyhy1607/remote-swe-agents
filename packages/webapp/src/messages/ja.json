@@ -8,7 +8,8 @@
     "menu": "メニュー",
     "language": "言語",
     "promptSettings": "プロンプト設定",
-    "apiKeys": "APIキー"
+    "apiKeys": "APIキー",
+    "costAnalysis": "コスト分析"
   },
   "sessions": {
     "title": "セッション一覧",
@@ -75,7 +76,51 @@
   "home": {
     "title": "Remote SWE Agents へようこそ",
     "description": "Remote SWE Agents では、AIを搭載したソフトウェアエンジニアがあなたのプロジェクトをサポートします。",
-    "getStarted": "始める"
+    "costAnalysis": "コスト分析"
+  },
+  "cost": {
+    "title": "コスト分析",
+    "description": "AIエージェントの使用コストとトークン消費量を分析",
+    "totalCost": "総コスト",
+    "totalTokens": "総トークン数",
+    "inputOutputTokens": "トークン内訳",
+    "input": "入力",
+    "output": "出力",
+    "cacheRead": "キャッシュ読込",
+    "cacheWrite": "キャッシュ書込",
+    "tokenUsageBreakdown": "トークン使用内訳",
+    "costBreakdown": "コスト内訳",
+    "costBreakdownDescription": "セッションとモデル別のコスト詳細",
+    "bySession": "セッション別",
+    "byModel": "モデル別",
+    "sessionId": "セッションID",
+    "initialPrompt": "初期プロンプト",
+    "date": "日付",
+    "cost": "コスト",
+    "model": "モデル",
+    "inputTokens": "入力トークン",
+    "outputTokens": "出力トークン",
+    "cacheTokens": "キャッシュトークン",
+    "noSessionData": "セッションデータがありません",
+    "noModelData": "モデルデータがありません",
+    "noMessage": "初期メッセージなし",
+    "total": "合計",
+    "period": "期間",
+    "yearSuffix": "{year}年",
+    "monthNames": {
+      "1": "1月",
+      "2": "2月",
+      "3": "3月",
+      "4": "4月",
+      "5": "5月",
+      "6": "6月",
+      "7": "7月",
+      "8": "8月",
+      "9": "9月",
+      "10": "10月",
+      "11": "11月",
+      "12": "12月"
+    }
   },
   "auth": {
     "signIn": "サインイン",

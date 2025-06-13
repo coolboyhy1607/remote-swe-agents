@@ -1,4 +1,11 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+  QueryCommandInput,
+  UpdateCommand,
+  paginateQuery,
+} from '@aws-sdk/lib-dynamodb';
 import { ddb, TableName } from './aws';
 
 import { AgentStatus, SessionItem } from '../schema';
@@ -48,19 +55,50 @@ export async function getSession(workerId: string): Promise<SessionItem | undefi
   return result.Item as SessionItem;
 }
 
-export const getSessions = async (): Promise<SessionItem[]> => {
-  const res = await ddb.send(
-    new QueryCommand({
-      TableName,
-      IndexName: 'LSI1',
-      KeyConditionExpression: 'PK = :pk',
-      ExpressionAttributeValues: {
-        ':pk': 'sessions',
+export const getSessions = async (
+  limit: number = 50,
+  range?: { startDate: number; endDate: number }
+): Promise<SessionItem[]> => {
+  const queryParams: QueryCommandInput = {
+    TableName,
+    IndexName: 'LSI1',
+    KeyConditionExpression: 'PK = :pk',
+    ExpressionAttributeValues: {
+      ':pk': 'sessions',
+    },
+    ScanIndexForward: false, // DESC order
+  };
+
+  // Add date range filter if provided
+  if (range) {
+    const startTimestamp = String(range.startDate).padStart(15, '0');
+    const endTimestamp = String(range.endDate).padStart(15, '0');
+
+    queryParams.KeyConditionExpression += ' AND LSI1 BETWEEN :startDate AND :endDate';
+    queryParams.ExpressionAttributeValues![':startDate'] = startTimestamp;
+    queryParams.ExpressionAttributeValues![':endDate'] = endTimestamp;
+  }
+
+  // If limit is 0, fetch all results using pagination
+  if (limit === 0) {
+    const paginator = paginateQuery(
+      {
+        client: ddb,
       },
-      ScanIndexForward: false, // DESC order
-      Limit: 50,
-    })
-  );
+      queryParams
+    );
+    const items: SessionItem[] = [];
+    for await (const page of paginator) {
+      if (page.Items != null) {
+        items.push(...(page.Items as SessionItem[]));
+      }
+    }
+    return items;
+  }
+
+  // Otherwise, use the specified limit
+  queryParams.Limit = limit;
+  const res = await ddb.send(new QueryCommand(queryParams));
 
   return (res.Items ?? []) as SessionItem[];
 };
