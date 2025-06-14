@@ -46,11 +46,11 @@ type MessageListProps = {
 };
 
 export default function MessageList({ messages, instanceStatus, agentStatus }: MessageListProps) {
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const t = useTranslations('sessions');
   const locale = useLocale();
   const localeForDate = locale === 'ja' ? 'ja-JP' : 'en-US';
-  const positionRatio = useScrollPosition();
+  const { isBottom } = useScrollPosition();
   // Track visibility of tool details for each message
   const [visibleToolDetails, setVisibleToolDetails] = useState<Set<string>>(new Set());
   const scrollPositionRef = useRef<number>(0);
@@ -94,7 +94,7 @@ export default function MessageList({ messages, instanceStatus, agentStatus }: M
   };
 
   useEffect(() => {
-    if (positionRatio > 0.95) {
+    if (isBottom) {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
   }, [messages]);

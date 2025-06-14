@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Header from '@/components/Header';
 import { ArrowLeft, ListChecks, Check, Plus, Loader2 } from 'lucide-react';
+import { useScrollPosition } from '@/hooks/use-scroll-position';
 import Link from 'next/link';
 import { useAction } from 'next-safe-action/hooks';
 import { updateAgentStatus } from '../actions';
@@ -44,6 +45,7 @@ export default function SessionPageClient({
   const [agentStatus, setAgentStatus] = useState<AgentStatus | undefined>(initialAgentStatus);
   const [todoList, setTodoList] = useState<TodoListType | null>(initialTodoList);
   const [showTodoModal, setShowTodoModal] = useState(false);
+  const { isBottom } = useScrollPosition();
 
   const getUnifiedStatus = () => {
     if (agentStatus === 'completed') {
@@ -301,9 +303,14 @@ export default function SessionPageClient({
           </button>
           <button
             onClick={scrollToBottom}
-            className="p-2 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 focus:outline-none cursor-pointer"
+            className={`p-2 rounded-full shadow-md focus:outline-none transition-colors ${
+              isBottom
+                ? 'bg-gray-400 text-gray-200'
+                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+            }`}
             title={t('scrollToBottom')}
             aria-label={t('scrollToBottom')}
+            disabled={isBottom}
           >
             <ArrowLeft className="w-5 h-5 -rotate-90" />
           </button>
