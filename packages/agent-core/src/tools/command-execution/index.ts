@@ -25,7 +25,9 @@ export const DefaultWorkingDirectory = join(homedir(), `.remote-swe-workspace`);
 spawn('mkdir', ['-p', DefaultWorkingDirectory]);
 
 export const executeCommand = async (command: string, cwd?: string, timeoutMs = 60000, longRunningProcess = false) => {
-  const token = await authorizeGitHubCli();
+  // Ignore error when github token is not available
+  const token = await authorizeGitHubCli().catch((e) => console.log(e));
+
   cwd = cwd ?? DefaultWorkingDirectory;
 
   return new Promise<{
@@ -42,7 +44,7 @@ export const executeCommand = async (command: string, cwd?: string, timeoutMs = 
       shell: true,
       env: {
         ...process.env,
-        GITHUB_TOKEN: token,
+        GITHUB_TOKEN: token ?? '',
       },
     });
 
