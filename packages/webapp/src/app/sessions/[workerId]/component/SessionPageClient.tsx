@@ -18,6 +18,7 @@ import {
 } from '@remote-swe-agents/agent-core/schema';
 import { useTranslations } from 'next-intl';
 import TodoList from './TodoList';
+import { getUnifiedStatus } from '@/utils/session-status';
 import { fetchLatestTodoList } from '../actions';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -77,23 +78,12 @@ export default function SessionPageClient({
     };
   }, [handleKeyDown]);
 
-  const getUnifiedStatus = () => {
-    if (agentStatus === 'completed') {
-      return { text: t('agentStatus.completed'), color: 'bg-gray-500' };
-    }
-    if (instanceStatus === 'stopped' || instanceStatus === 'terminated') {
-      return { text: t('sessionStatus.stopped'), color: 'bg-gray-500' };
-    }
-    if (instanceStatus === 'starting') {
-      return { text: t('sessionStatus.starting'), color: 'bg-blue-500' };
-    }
-    if (agentStatus === 'pending') {
-      return { text: t('agentStatus.pending'), color: 'bg-yellow-500' };
-    }
-    if (agentStatus === 'working') {
-      return { text: t('agentStatus.working'), color: 'bg-green-500' };
-    }
-    return { text: t('agentStatus.unknown'), color: 'bg-gray-400' };
+  const getSessionStatus = () => {
+    const status = getUnifiedStatus(agentStatus, instanceStatus);
+    return {
+      text: t(status.i18nKey),
+      color: status.color,
+    };
   };
 
   // Refetch todoList function using safe action
@@ -262,9 +252,9 @@ export default function SessionPageClient({
               {(instanceStatus || agentStatus) && (
                 <div className="flex items-center gap-1 sm:gap-2 w-20 sm:w-24 min-w-0">
                   <span
-                    className={`inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${getUnifiedStatus().color}`}
+                    className={`inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${getSessionStatus().color}`}
                   />
-                  <span className="text-xs sm:text-sm font-medium truncate">{getUnifiedStatus().text}</span>
+                  <span className="text-xs sm:text-sm font-medium truncate">{getSessionStatus().text}</span>
                 </div>
               )}
               {todoList && (

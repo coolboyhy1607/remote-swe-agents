@@ -5,33 +5,14 @@ import { Plus, MessageSquare, Clock, DollarSign } from 'lucide-react';
 import { getSessions } from '@remote-swe-agents/agent-core/lib';
 import { getTranslations } from 'next-intl/server';
 import { RefreshOnFocus } from '@/components/RefreshOnFocus';
-import { SessionItem } from '@remote-swe-agents/agent-core/schema';
 import { getUserLocale } from '@/i18n/db';
+import { getUnifiedStatus } from '@/utils/session-status';
 
 export default async function SessionsPage() {
   const sessions = await getSessions();
   const t = await getTranslations('sessions');
   const locale = await getUserLocale();
   const localeForDate = locale === 'ja' ? 'ja-JP' : 'en-US';
-
-  const getUnifiedStatus = (session: SessionItem) => {
-    if (session.agentStatus === 'completed') {
-      return { text: t('agentStatus.completed'), color: 'bg-gray-500' };
-    }
-    if (session.instanceStatus === 'stopped' || session.instanceStatus === 'terminated') {
-      return { text: t('sessionStatus.stopped'), color: 'bg-gray-500' };
-    }
-    if (session.instanceStatus === 'starting') {
-      return { text: t('sessionStatus.starting'), color: 'bg-blue-500' };
-    }
-    if (session.agentStatus === 'pending') {
-      return { text: t('agentStatus.pending'), color: 'bg-yellow-500' };
-    }
-    if (session.agentStatus === 'working') {
-      return { text: t('agentStatus.working'), color: 'bg-green-500' };
-    }
-    return { text: t('agentStatus.unknown'), color: 'bg-gray-400' };
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
@@ -52,7 +33,7 @@ export default async function SessionsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {sessions.map((session) => {
-              const status = getUnifiedStatus(session);
+              const status = getUnifiedStatus(session.agentStatus, session.instanceStatus);
               return (
                 <Link key={session.workerId} href={`/sessions/${session.workerId}`} className="block">
                   <div
@@ -72,7 +53,7 @@ export default async function SessionsPage() {
                         <div className="w-4 flex justify-center">
                           <span className={`inline-block w-2 h-2 rounded-full ${status.color}`} />
                         </div>
-                        <span className="truncate ml-1">{status.text}</span>
+                        <span className="truncate ml-1">{t(status.i18nKey)}</span>
                       </div>
 
                       <div className="flex items-center">
