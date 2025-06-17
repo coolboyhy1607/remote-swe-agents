@@ -3007,6 +3007,23 @@ exports.handler = async function (event, context) {
     "Webapp107041BD": {
       "Properties": {
         "DistributionConfig": {
+          "CacheBehaviors": [
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+              ],
+              "CachePolicyId": {
+                "Ref": "WebappStaticCachePolicy6F41ACA1",
+              },
+              "Compress": true,
+              "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
+              "PathPattern": "_next/static/*",
+              "TargetOriginId": "TestMainStackWebappOrigin144EF7B3C",
+              "ViewerProtocolPolicy": "allow-all",
+            },
+          ],
           "Comment": "CloudFront for RemoteSweAgentsWebapp",
           "DefaultCacheBehavior": {
             "AllowedMethods": [
@@ -3019,7 +3036,7 @@ exports.handler = async function (event, context) {
               "DELETE",
             ],
             "CachePolicyId": {
-              "Ref": "WebappSharedCachePolicy14FEE4A0",
+              "Ref": "WebappDefaultCachePolicy30DB4EEB",
             },
             "Compress": true,
             "LambdaFunctionAssociations": [
@@ -3244,6 +3261,37 @@ exports.handler = async function (event, context) {
       },
       "Type": "AWS::ECR::Repository",
       "UpdateReplacePolicy": "Delete",
+    },
+    "WebappDefaultCachePolicy30DB4EEB": {
+      "Properties": {
+        "CachePolicyConfig": {
+          "DefaultTTL": 0,
+          "MaxTTL": 31536000,
+          "MinTTL": 0,
+          "Name": "TestMainStackWebappDefaultCachePolicy7C393633-us-east-1",
+          "ParametersInCacheKeyAndForwardedToOrigin": {
+            "CookiesConfig": {
+              "CookieBehavior": "all",
+            },
+            "EnableAcceptEncodingBrotli": true,
+            "EnableAcceptEncodingGzip": true,
+            "HeadersConfig": {
+              "HeaderBehavior": "whitelist",
+              "Headers": [
+                "authorization",
+                "Origin",
+                "X-HTTP-Method-Override",
+                "X-HTTP-Method",
+                "X-Method-Override",
+              ],
+            },
+            "QueryStringsConfig": {
+              "QueryStringBehavior": "all",
+            },
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::CachePolicy",
     },
     "WebappHandler8DD158A3": {
       "DependsOn": [
@@ -3663,23 +3711,22 @@ exports.handler = async function (event, context) {
       },
       "Type": "AWS::SSM::Parameter",
     },
-    "WebappSharedCachePolicy14FEE4A0": {
+    "WebappStaticCachePolicy6F41ACA1": {
       "Properties": {
         "CachePolicyConfig": {
           "DefaultTTL": 0,
           "MaxTTL": 31536000,
           "MinTTL": 0,
-          "Name": "TestMainStackWebappSharedCachePolicy2F06D6AB-us-east-1",
+          "Name": "TestMainStackWebappStaticCachePolicy05C7530B-us-east-1",
           "ParametersInCacheKeyAndForwardedToOrigin": {
             "CookiesConfig": {
-              "CookieBehavior": "all",
+              "CookieBehavior": "none",
             },
             "EnableAcceptEncodingBrotli": true,
             "EnableAcceptEncodingGzip": true,
             "HeadersConfig": {
               "HeaderBehavior": "whitelist",
               "Headers": [
-                "authorization",
                 "Origin",
                 "X-HTTP-Method-Override",
                 "X-HTTP-Method",
