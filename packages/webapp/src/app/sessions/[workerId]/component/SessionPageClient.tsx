@@ -69,23 +69,29 @@ export default function SessionPageClient({
   // Setup event handler for Escape key press to force stop agent work
   const { execute: sendEvent } = useAction(sendEventToAgent, {
     onExecute: () => {
-      toast.success(t('forceStopSuccess'));
+      toast.success(t('forceStopInProgress'));
     },
     onError: (error) => {
       toast.error(`${t('forceStopError')}: ${error?.error?.serverError || error}`);
     },
   });
 
+  const handleInterrupt = useCallback(() => {
+    if (agentStatus === 'working') {
+      sendEvent({
+        workerId,
+        event: { type: 'forceStop' },
+      });
+    }
+  }, [workerId, agentStatus, sendEvent]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && agentStatus === 'working') {
-        sendEvent({
-          workerId,
-          event: { type: 'forceStop' },
-        });
+      if (e.key === 'Escape') {
+        handleInterrupt();
       }
     },
-    [workerId, agentStatus, t, sendEvent]
+    [handleInterrupt]
   );
 
   // Add and remove event listener for Escape key
@@ -255,7 +261,7 @@ export default function SessionPageClient({
                 }
                 className={`flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 border-2 rounded cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
                   agentStatus === 'completed'
-                    ? 'border-gray-400 bg-gray-400 dark:border-gray-500 dark:bg-gray-500'
+                    ? 'border-gray-400 bg-gray-400 hover:border-gray-500 hover:bg-gray-500 dark:border-gray-500 dark:bg-gray-500 dark:hover:border-gray-400 dark:hover:bg-gray-400'
                     : 'border-gray-300 bg-white hover:border-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500'
                 }`}
                 title={agentStatus === 'completed' ? t('markAsIncomplete') : t('markAsCompleted')}
@@ -327,7 +333,12 @@ export default function SessionPageClient({
           </div>
         )}
 
-        <MessageList messages={messages} instanceStatus={instanceStatus} agentStatus={agentStatus} />
+        <MessageList
+          messages={messages}
+          instanceStatus={instanceStatus}
+          agentStatus={agentStatus}
+          onInterrupt={handleInterrupt}
+        />
 
         <MessageForm onSubmit={onSendMessage} workerId={workerId} />
 
