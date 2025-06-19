@@ -11,6 +11,7 @@ import { IStringParameter, StringParameter } from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { WorkerImageBuilder } from './image-builder';
 import { readFileSync } from 'fs';
+import { Asset, AssetProps } from 'aws-cdk-lib/aws-s3-assets';
 
 export interface WorkerProps {
   vpc: ec2.IVpc;
@@ -77,28 +78,31 @@ export class Worker extends Construct {
     const bus = new WorkerBus(this, 'Bus', {});
     this.bus = bus;
 
+    const assetProps: AssetProps = {
+      path: join('..', 'resources'),
+      bundling: {
+        command: [
+          'sh',
+          '-c',
+          [
+            //
+            'cd /asset-input',
+            'tar -zcf source.tar.gz -C /build/ .',
+            'mkdir -p /asset-output/source',
+            'mv source.tar.gz /asset-output/source',
+          ].join('&&'),
+        ],
+        image: DockerImage.fromBuild('..', { file: join('docker', 'worker.Dockerfile') }),
+      },
+      assetHashType: AssetHashType.SOURCE,
+    };
+    // Create the source asset with explicit hash type to ensure changes are detected
+    const sourceAsset = new Asset(this, 'SourceAssetForHash', assetProps);
+    const sourceAssetHash = sourceAsset.assetHash;
+
     new BucketDeployment(this, 'SourceDeployment', {
       destinationBucket: sourceBucket,
-      sources: [
-        // specify a dummy directory. All the input files are already in the image.
-        Source.asset(join('..', 'resources'), {
-          bundling: {
-            command: [
-              'sh',
-              '-c',
-              [
-                //
-                'cd /asset-input',
-                'tar -zcf source.tar.gz -C /build/ .',
-                'mkdir -p /asset-output/source',
-                'mv source.tar.gz /asset-output/source',
-              ].join('&&'),
-            ],
-            image: DockerImage.fromBuild('..', { file: join('docker', 'worker.Dockerfile') }),
-          },
-          assetHashType: AssetHashType.OUTPUT,
-        }),
-      ],
+      sources: [Source.asset(assetProps.path, assetProps)],
     });
 
     // Create a list of managed policies with the base SSM policy
@@ -261,6 +265,11 @@ download_fresh_files() {
   npm ci
   npm run build -w packages/agent-core
 
+  # Install Chrome
+  cd packages/worker
+  npx playwright install chromium
+  cd -
+
   # Save the ETag
   echo "$CURRENT_ETAG" > "$ETAG_FILE"
 }
@@ -305,7 +314,6 @@ export GITHUB_PERSONAL_ACCESS_TOKEN=${
 
 # Start app
 cd packages/worker
-npx playwright install chromium
 npx tsx src/main.ts
 EOF
 
@@ -431,6 +439,7 @@ systemctl start myapp
       installDependenciesCommand,
       amiIdParameterName: props.amiIdParameterName,
       sourceBucket,
+      sourceAssetHash,
     });
 
     role.addToPrincipalPolicy(
