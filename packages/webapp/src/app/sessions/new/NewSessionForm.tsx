@@ -57,7 +57,7 @@ export default function NewSessionForm({ templates }: NewSessionFormProps) {
   const isUploading = uploadingImages.some((img) => !img.key);
 
   const handleTemplateSelect = (template: PromptTemplate) => {
-    setValue('message', template.content);
+    setValue('message', template.content, { shouldValidate: true });
     setIsTemplateModalOpen(false);
   };
 
