@@ -79,6 +79,7 @@ export class Worker extends Construct {
     this.bus = bus;
 
     const assetProps: AssetProps = {
+      // we set dummy directory here because all the files are included in the build image.
       path: join('..', 'resources'),
       bundling: {
         command: [
@@ -94,7 +95,7 @@ export class Worker extends Construct {
         ],
         image: DockerImage.fromBuild('..', { file: join('docker', 'worker.Dockerfile') }),
       },
-      assetHashType: AssetHashType.SOURCE,
+      assetHashType: AssetHashType.OUTPUT,
     };
     // Create the source asset with explicit hash type to ensure changes are detected
     const sourceAsset = new Asset(this, 'SourceAssetForHash', assetProps);
