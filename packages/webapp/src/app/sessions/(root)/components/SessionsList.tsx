@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Plus, MessageSquare, Clock, DollarSign } from 'lucide-react';
+import { Plus, MessageSquare, Clock, DollarSign, Users } from 'lucide-react';
 import { useEventBus } from '@/hooks/use-event-bus';
 import { useCallback, useState, useEffect } from 'react';
 import { SessionItem, webappEventSchema } from '@remote-swe-agents/agent-core/schema';
@@ -12,9 +12,10 @@ import { useRouter } from 'next/navigation';
 
 interface SessionsListProps {
   initialSessions: SessionItem[];
+  currentUserId: string;
 }
 
-export default function SessionsList({ initialSessions }: SessionsListProps) {
+export default function SessionsList({ initialSessions, currentUserId }: SessionsListProps) {
   const t = useTranslations('sessions');
   const router = useRouter();
   const locale = useLocale();
@@ -75,11 +76,18 @@ export default function SessionsList({ initialSessions }: SessionsListProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {sessions.map((session) => {
           const status = getUnifiedStatus(session.agentStatus, session.instanceStatus);
+          const isOtherUserSession = session.initiator && session.initiator !== `webapp#${currentUserId}`;
           return (
             <Link key={session.workerId} href={`/sessions/${session.workerId}`} className="block">
               <div
-                className={`border border-gray-200 dark:border-gray-700 ${session.agentStatus === 'completed' ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'} rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col h-40`}
+                className={`border border-gray-200 dark:border-gray-700 ${session.agentStatus === 'completed' ? 'bg-gray-100 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'} rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex flex-col h-40 relative`}
               >
+                {isOtherUserSession && (
+                  <div className="absolute bottom-2 right-2" title={t('initiatedByOtherUsers')}>
+                    <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 mb-3">
                   <MessageSquare className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{session.SK}</h3>
