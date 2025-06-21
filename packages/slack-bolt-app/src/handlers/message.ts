@@ -1,7 +1,7 @@
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { WebClient } from '@slack/web-api';
 import { saveConversationHistory } from '../util/history';
-import { s3, BucketName } from '@remote-swe-agents/agent-core/aws';
+import { s3, BucketName, getParameter } from '@remote-swe-agents/agent-core/aws';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { AsyncHandlerEvent } from '../async-handler';
 import { sendWorkerEvent } from '../../../agent-core/src/lib';
@@ -66,6 +66,19 @@ export async function handleMessage(
   const logGroupName = process.env.LOG_GROUP_NAME!;
   const cloudwatchUrl = `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:log-groups/log-group/${encodeURIComponent(logGroupName)}/log-events/${encodeURIComponent(logStreamName)}`;
 
+  // Get webapp domain from SSM parameter
+  const originSourceParameterName = process.env.APP_ORIGIN_SOURCE_PARAMETER;
+  let webappUrl: string | undefined = undefined;
+
+  if (originSourceParameterName) {
+    try {
+      webappUrl = await getParameter(originSourceParameterName);
+      console.log(`Retrieved webapp URL: ${webappUrl}`);
+    } catch (error) {
+      console.error('Error retrieving webapp URL:', error);
+    }
+  }
+
   const promises = [
     saveConversationHistory(workerId, message, userId, imageKeys),
     sendWorkerEvent(workerId, { type: 'onMessageReceived' }),
@@ -113,23 +126,45 @@ export async function handleMessage(
                   style: 'bullet',
                   indent: 0,
                   elements: [
-                    {
-                      type: 'rich_text_section',
-                      elements: [
-                        {
-                          type: 'text',
-                          text: 'You can view ',
-                        },
-                        {
-                          type: 'link',
-                          url: cloudwatchUrl,
-                          text: 'the execution log here',
-                          style: {
-                            bold: true,
+                    ...(webappUrl
+                      ? [
+                          {
+                            type: 'rich_text_section',
+                            elements: [
+                              {
+                                type: 'text',
+                                text: 'View this session in WebApp: ',
+                              },
+                              {
+                                type: 'link',
+                                url: `${webappUrl}/sessions/${workerId}`,
+                                text: 'Open in Web UI',
+                                style: {
+                                  bold: true,
+                                },
+                              },
+                            ],
+                          } as any,
+                        ]
+                      : [
+                          {
+                            type: 'rich_text_section',
+                            elements: [
+                              {
+                                type: 'text',
+                                text: 'You can view ',
+                              },
+                              {
+                                type: 'link',
+                                url: cloudwatchUrl,
+                                text: 'the execution log here',
+                                style: {
+                                  bold: true,
+                                },
+                              },
+                            ],
                           },
-                        },
-                      ],
-                    },
+                        ]),
                     {
                       type: 'rich_text_section',
                       elements: [

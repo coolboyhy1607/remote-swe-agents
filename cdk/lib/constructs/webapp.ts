@@ -45,6 +45,7 @@ export interface WebappProps {
 
 export class Webapp extends Construct {
   public readonly baseUrl: string;
+  public readonly originSourceParameter: IStringParameter;
 
   constructor(scope: Construct, id: string, props: WebappProps) {
     super(scope, id);
@@ -130,15 +131,20 @@ export class Webapp extends Construct {
         `${this.baseUrl}/api/auth/sign-out-callback`
       );
       handler.addEnvironment('APP_ORIGIN', service.url);
+      this.originSourceParameter = new StringParameter(this, 'OriginSourceParameter', {
+        stringValue: service.url,
+      });
     } else {
       auth.updateAllowedCallbackUrls(
         [`${this.baseUrl}/api/auth/sign-in-callback`, `http://localhost:3011/api/auth/sign-in-callback`],
         [`${this.baseUrl}/api/auth/sign-out-callback`, `http://localhost:3011/api/auth/sign-out-callback`]
       );
 
+      // Create parameter and expose it publicly for other constructs to use
       const originSourceParameter = new StringParameter(this, 'OriginSourceParameter', {
         stringValue: 'dummy',
       });
+      this.originSourceParameter = originSourceParameter;
       originSourceParameter.grantRead(handler);
       handler.addEnvironment('APP_ORIGIN_SOURCE_PARAMETER', originSourceParameter.parameterName);
 

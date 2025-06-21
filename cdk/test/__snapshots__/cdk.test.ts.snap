@@ -2335,6 +2335,9 @@ exports.handler = async function (event, context) {
         },
         "Environment": {
           "Variables": {
+            "APP_ORIGIN_SOURCE_PARAMETER": {
+              "Ref": "WebappOriginSourceParameterD87E143B",
+            },
             "ASYNC_LAMBDA_NAME": {
               "Ref": "SlackBoltAsyncHandler9A0D467E",
             },
@@ -2411,6 +2414,26 @@ exports.handler = async function (event, context) {
       "Properties": {
         "PolicyDocument": {
           "Statement": [
+            {
+              "Action": [
+                "ssm:DescribeParameters",
+                "ssm:GetParameter",
+                "ssm:GetParameterHistory",
+                "ssm:GetParameters",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:ssm:us-east-1:123456789012:parameter/",
+                    {
+                      "Ref": "WebappOriginSourceParameterD87E143B",
+                    },
+                  ],
+                ],
+              },
+            },
             {
               "Action": "lambda:InvokeFunction",
               "Effect": "Allow",

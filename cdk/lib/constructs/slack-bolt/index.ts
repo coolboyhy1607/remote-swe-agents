@@ -1,4 +1,4 @@
-import { CfnOutput, Duration, IgnoreMode, RemovalPolicy } from 'aws-cdk-lib';
+import { CfnOutput, Duration, IgnoreMode, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { CfnStage, HttpApi } from 'aws-cdk-lib/aws-apigatewayv2';
 import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import { PolicyStatement } from 'aws-cdk-lib/aws-iam';
@@ -22,13 +22,14 @@ export interface SlackBoltProps {
   adminUserIdList?: string;
   workerLogGroupName: string;
   workerAmiIdParameter: IStringParameter;
+  webappOriginSourceParameter: IStringParameter;
 }
 
 export class SlackBolt extends Construct {
   constructor(scope: Construct, id: string, props: SlackBoltProps) {
     super(scope, id);
 
-    const { botTokenParameter, signingSecretParameter } = props;
+    const { botTokenParameter, signingSecretParameter, webappOriginSourceParameter } = props;
     const asyncHandler = new DockerImageFunction(this, 'AsyncHandler', {
       code: DockerImageCode.fromImageAsset('..', {
         file: join('docker', 'slack-bolt-app.Dockerfile'),
@@ -68,10 +69,12 @@ export class SlackBolt extends Construct {
         TABLE_NAME: props.storage.table.tableName,
         BUCKET_NAME: props.storage.bucket.bucketName,
         LOG_GROUP_NAME: props.workerLogGroupName,
+        APP_ORIGIN_SOURCE_PARAMETER: webappOriginSourceParameter.parameterName,
         ...(props.adminUserIdList ? { ADMIN_USER_ID_LIST: props.adminUserIdList } : {}),
       },
       architecture: Architecture.ARM_64,
     });
+    webappOriginSourceParameter.grantRead(handler);
     asyncHandler.grantInvoke(handler);
     props.storage.table.grantReadWriteData(handler);
     props.storage.bucket.grantReadWrite(handler);
