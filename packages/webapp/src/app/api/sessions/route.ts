@@ -1,6 +1,6 @@
 import { validateApiKeyMiddleware } from '../auth/api-key';
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrCreateWorkerInstance, renderUserMessage, sendWorkerEvent } from '@remote-swe-agents/agent-core/lib';
+import { getOrCreateWorkerInstance, sendWorkerEvent } from '@remote-swe-agents/agent-core/lib';
 import { ddb, TableName } from '@remote-swe-agents/agent-core/aws';
 import { TransactWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const now = Date.now();
 
   // Create content for the message
-  const content = [{ text: renderUserMessage({ message }) }];
+  const content = [{ text: message }];
 
   // Create session and initial message in a transaction
   await ddb.send(

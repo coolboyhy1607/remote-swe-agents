@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function SessionsPage() {
-  const sessions = await getSessions();
+  const sessions = await getSessions(100);
   const { userId } = await getSession();
 
   return (
