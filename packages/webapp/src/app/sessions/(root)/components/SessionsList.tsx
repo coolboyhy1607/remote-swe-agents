@@ -11,6 +11,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAction } from 'next-safe-action/hooks';
 import { hideSessionAction } from '../actions';
+import { extractUserMessage } from '@/lib/message-formatter';
 
 interface SessionsListProps {
   initialSessions: SessionItem[];
@@ -151,7 +152,7 @@ export default function SessionsList({ initialSessions, currentUserId }: Session
                 </div>
 
                 <p className="text-xs text-gray-600 dark:text-gray-300 mb-4 flex-1 truncate">
-                  {session.initialMessage}
+                  {extractUserMessage(session.initialMessage)}
                 </p>
 
                 <div className="space-y-2 text-xs text-gray-500 dark:text-gray-400">

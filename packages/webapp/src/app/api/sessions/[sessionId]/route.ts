@@ -11,7 +11,7 @@ import {
 import { ddb, TableName } from '@remote-swe-agents/agent-core/aws';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 import { z } from 'zod';
-import { formatMessage } from '@/lib/message-formatter';
+import { extractUserMessage, formatMessage } from '@/lib/message-formatter';
 
 // Schema for request validation
 const sendMessageSchema = z.object({
@@ -128,9 +128,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
       case 'userMessage': {
         const text = (message.content?.map((c) => c.text).filter((c) => c) ?? []).join('\n');
-        const extracted = text
-          .slice(text.indexOf('<user_message>') + '<user_message>'.length, text.indexOf('</user_message>'))
-          .trim();
+        const extracted = extractUserMessage(text);
 
         messages.push({
           role: 'user',

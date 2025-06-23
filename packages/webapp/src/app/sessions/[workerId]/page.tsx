@@ -9,7 +9,7 @@ import SessionPageClient from './component/SessionPageClient';
 import { MessageView } from './component/MessageList';
 import { notFound } from 'next/navigation';
 import { RefreshOnFocus } from '@/components/RefreshOnFocus';
-import { formatMessage } from '@/lib/message-formatter';
+import { extractUserMessage, formatMessage } from '@/lib/message-formatter';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -127,12 +127,7 @@ export default async function SessionPage({ params }: SessionPageProps) {
       }
       case 'userMessage': {
         const text = (message.content?.map((c) => c.text).filter((c) => c) ?? []).join('\n');
-        const extracted =
-          text.includes('<user_message>') && text.includes('</user_message>')
-            ? text
-                .slice(text.indexOf('<user_message>') + '<user_message>'.length, text.indexOf('</user_message>'))
-                .trim()
-            : text.trim();
+        const extracted = extractUserMessage(text);
 
         messages.push({
           id: `${item.SK}-${i}`,

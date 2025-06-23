@@ -47,3 +47,15 @@ export function formatMessage(message: string): string {
   // Remove any leading or trailing whitespace
   return message.trim();
 }
+
+export function extractUserMessage(message: string | undefined): string {
+  if (!message) return message ?? '';
+
+  if (!message.includes('<user_message>') || !message.includes('</user_message>')) {
+    return message.trim();
+  }
+
+  return message
+    .slice(message.indexOf('<user_message>') + '<user_message>'.length, message.indexOf('</user_message>'))
+    .trim();
+}
