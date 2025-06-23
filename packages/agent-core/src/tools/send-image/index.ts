@@ -33,29 +33,20 @@ const getContentTypeFromExtension = (filePath: string): string => {
 export const sendImageTool: ToolDefinition<z.infer<typeof inputSchema>> = {
   name,
   handler: async (input: z.infer<typeof inputSchema>, context: { toolUseId: string }) => {
-    // Send to Slack as before
     await sendFileToSlack(input.imagePath, input.message);
 
-    // If context with toolUseId is provided, also upload to S3
-    try {
-      const fileBuffer = readFileSync(input.imagePath);
-      const contentType = getContentTypeFromExtension(input.imagePath);
-      const s3Key = getAttachedImageKey(WorkerId, context.toolUseId, input.imagePath);
+    const fileBuffer = readFileSync(input.imagePath);
+    const contentType = getContentTypeFromExtension(input.imagePath);
+    const s3Key = getAttachedImageKey(WorkerId, context.toolUseId, input.imagePath);
 
-      await s3.send(
-        new PutObjectCommand({
-          Bucket: BucketName,
-          Key: s3Key,
-          Body: fileBuffer,
-          ContentType: contentType,
-        })
-      );
-
-      console.log(`Image uploaded to S3: ${s3Key}`);
-    } catch (error) {
-      console.error('Failed to upload image to S3:', error);
-      // Don't fail the entire operation if S3 upload fails
-    }
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: BucketName,
+        Key: s3Key,
+        Body: fileBuffer,
+        ContentType: contentType,
+      })
+    );
 
     return 'successfully sent an image with message.';
   },
