@@ -19,10 +19,31 @@ function removeSlackMentions(message: string): string {
   return cleanedMessage;
 }
 
+/**
+ * Adds trailing spaces to URLs in the message
+ *
+ * @param message The message content to process
+ * @returns The message with spaces added after URLs
+ */
+function addSpacesToUrls(message: string): string {
+  // Regular expression to match URLs
+  // https://stackoverflow.com/a/3809435
+  const urlRegex =
+    /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+
+  // Add trailing space to URLs
+  return message.replace(urlRegex, (match) => {
+    return ' ' + match + ' ';
+  });
+}
+
 export function formatMessage(message: string): string {
   // Remove Slack mentions
-  const cleanedMessage = removeSlackMentions(message);
+  message = removeSlackMentions(message);
+
+  // Add trailing spaces to URLs
+  message = addSpacesToUrls(message);
 
   // Remove any leading or trailing whitespace
-  return cleanedMessage.trim();
+  return message.trim();
 }
