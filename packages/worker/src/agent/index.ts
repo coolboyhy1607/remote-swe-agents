@@ -41,10 +41,7 @@ import { sendWebappEvent } from '@remote-swe-agents/agent-core/lib';
 import { CancellationToken } from '../common/cancellation-token';
 import { updateAgentStatusWithEvent } from '../common/status';
 
-export const onMessageReceived = async (workerId: string, cancellationToken: CancellationToken) => {
-  // Update agent status to 'working' when starting a turn
-  await updateAgentStatusWithEvent(workerId, 'working');
-
+const agentLoop = async (workerId: string, cancellationToken: CancellationToken) => {
   const { items: allItems, slackUserId } = await pRetry(
     async (attemptCount) => {
       const res = await getConversationHistory(workerId);
@@ -326,6 +323,7 @@ Users will primarily request software engineering assistance including bug fixes
         await sendWebappEvent(workerId, {
           type: 'toolUse',
           toolName: toolUse.name ?? '',
+          toolUseId: toolUseId,
           input: JSON.stringify(toolUse.input),
         });
         let toolResult = '';
@@ -367,13 +365,13 @@ Users will primarily request software engineering assistance including bug fixes
               throw new Error(`tool ${name} is not found`);
             }
             const schema = tool.schema;
-            const { success, data: input } = schema.safeParse(toolInput);
+            const { success, data: input, error } = schema.safeParse(toolInput);
             if (!success) {
-              throw new Error('invalid input');
+              throw new Error(`invalid input: ${error}`);
             }
 
             console.log(`using tool: ${name} ${JSON.stringify(input)}`);
-            const result = await tool.handler(input);
+            const result = await tool.handler(input, { toolUseId });
             if (typeof result == 'string') {
               toolResult = result;
             } else {
@@ -406,6 +404,7 @@ Users will primarily request software engineering assistance including bug fixes
         await sendWebappEvent(workerId, {
           type: 'toolResult',
           toolName: toolUse.name ?? '',
+          toolUseId: toolUseId,
           output: toolResult ? toolResult : (toolResultObject?.map((r) => r.text).join('\n') ?? ''),
         });
       }
@@ -439,13 +438,23 @@ Users will primarily request software engineering assistance including bug fixes
       break;
     }
   }
-  if (cancellationToken.isCancelled) {
-    // execute any callback when set in the cancellation token.
-    await cancellationToken.completeCancel();
-  } else {
-    // Update agent status to 'pending' when finishing a turn.
-    // When the turn is cancelled, do not update the status to avoid race condition.
-    await updateAgentStatusWithEvent(workerId, 'pending');
+};
+
+export const onMessageReceived = async (workerId: string, cancellationToken: CancellationToken) => {
+  // Update agent status to 'working' when starting a turn
+  await updateAgentStatusWithEvent(workerId, 'working');
+
+  try {
+    await agentLoop(workerId, cancellationToken);
+  } finally {
+    if (cancellationToken.isCancelled) {
+      // execute any callback when set in the cancellation token.
+      await cancellationToken.completeCancel();
+    } else {
+      // Update agent status to 'pending' when finishing a turn.
+      // When the turn is cancelled, do not update the status to avoid race condition.
+      await updateAgentStatusWithEvent(workerId, 'pending');
+    }
   }
 };
 
