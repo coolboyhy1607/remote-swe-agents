@@ -51,7 +51,7 @@ export default async function ApiKeysPage() {
                     <p className="text-gray-600 dark:text-gray-300 mt-2">{documentationT('createSessionReturns')}</p>
                     <pre className="p-4 bg-gray-100 dark:bg-gray-800 rounded-md overflow-x-auto">
                       <code>{`{
-  "workerId": "api-1234567890"
+  "sessionId": "api-1234567890"
 }`}</code>
                     </pre>
                     <p className="text-gray-600 dark:text-gray-300 mt-4 mb-2">{documentationT('exampleCurl')}</p>
