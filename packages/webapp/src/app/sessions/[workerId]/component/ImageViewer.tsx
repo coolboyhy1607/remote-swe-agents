@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getImageUrls } from '@/actions/image/action';
 
@@ -15,29 +15,74 @@ type ImageData = {
   error: boolean;
 };
 
-export const ImageViewer = ({ imageKeys }: ImageViewerProps) => {
+export const ImageViewer = ({ imageKeys: inputKeys }: ImageViewerProps) => {
   const [images, setImages] = useState<ImageData[]>([]);
+  const [imageCache, setImageCache] = useState<Map<string, ImageData>>(new Map());
+  const imageKeys = useMemo(
+    () =>
+      inputKeys.filter(
+        (key) =>
+          key.endsWith('.jpg') ||
+          key.endsWith('.jpeg') ||
+          key.endsWith('.png') ||
+          key.endsWith('.webp') ||
+          key.endsWith('.svg') ||
+          false
+      ),
+    [inputKeys]
+  );
 
   useEffect(() => {
     const loadImages = async () => {
-      setImages(imageKeys.map((key) => ({ key, url: '', loading: true, error: false })));
+      // Build display data immediately from existing cache (without showing loading state)
+      const currentImages = imageKeys.map((key) => {
+        const cached = imageCache.get(key);
+        return cached ?? { key, url: '', loading: true, error: false };
+      });
+      setImages(currentImages);
 
+      // Always refetch signed URLs as they may expire
       try {
         const result = await getImageUrls({ keys: imageKeys });
 
         if (result?.data) {
-          setImages(
-            result.data.map((item) => ({
+          // Update cache
+          const newCache = new Map(imageCache);
+          result.data.forEach((item) => {
+            newCache.set(item.key, {
               key: item.key,
               url: item.url,
               loading: false,
               error: false,
-            }))
+            });
+          });
+          setImageCache(newCache);
+
+          // Update display data from cache
+          setImages(
+            imageKeys.map((key) => {
+              const cached = newCache.get(key);
+              return cached || { key, url: '', loading: false, error: true };
+            })
           );
         }
       } catch (error) {
         console.error('Failed to load image URLs:', error);
-        setImages((prev) => prev.map((img) => ({ ...img, loading: false, error: true })));
+        // On error, preserve existing cache and only set new keys to error state
+        const newCache = new Map(imageCache);
+        imageKeys.forEach((key) => {
+          if (!newCache.has(key)) {
+            newCache.set(key, { key, url: '', loading: false, error: true });
+          }
+        });
+        setImageCache(newCache);
+
+        setImages(
+          imageKeys.map((key) => {
+            const cached = newCache.get(key);
+            return cached || { key, url: '', loading: false, error: true };
+          })
+        );
       }
     };
 
