@@ -12,8 +12,9 @@ npm run watch
 ```
 
 ```sh
-export BUCKET_NAME=remoteswestack-sandbox-storageimagebucket99ba9550-xxxxxxx
-export TABLE_NAME=RemoteSweStack-Sandbox-StorageHistory251A3AE8-xxxxxxx
-export GITHUB_PERSONAL_ACCESS_TOKEN='dummy'
-npx tsx src/local.ts
+cd packages/worker
+npm run setup:local
+npm run start:local
+
+# access http://localhost:8001 for DynamoDB Admin
 ```
