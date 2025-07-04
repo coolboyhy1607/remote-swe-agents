@@ -1,4 +1,5 @@
 import {
+  ContentBlock,
   ConverseCommandInput,
   Message,
   ThrottlingException,
@@ -126,6 +127,7 @@ IMPORTANT:
 - DO NOT make up any urls by yourself because it is unreliable. Instead, use search engines such as https://www.google.com/search?q=QUERY or https://www.bing.com/search?q=QUERY
 - Some pages can be inaccessible due to permission issues or bot protection. If you encountered these, just returns a message "I cannot access to the page due to REASON...". DO NOT make up any information guessing from the URL.
 - When you are asked to check URLs of GitHub domain (github.com), you should use GitHub CLI with ${commandExecutionTool.name} tool to check the information, because it is often more efficient.
+- The keyword 'ultrathink' in user messages is used for thinking budget adjustment and should be ignored semantically.
 
 ## Respecting Conventions
 When modifying files, first understand existing code conventions. Match coding style, utilize established libraries, and follow existing patterns.
@@ -227,6 +229,10 @@ Users will primarily request software engineering assistance including bug fixes
   let secondCachePoint = 0;
   const appendedItems: typeof allItems = [];
 
+  // When we get max_tokens stopReason, we double the number of max output tokens for this turn.
+  // Because changing the max token count purges the prompt cache, we do not want to change it too frequently.
+  let maxTokensExceededCount = 0;
+
   let lastReportedTime = 0;
   while (true) {
     if (cancellationToken.isCancelled) break;
@@ -261,20 +267,35 @@ Users will primarily request software engineering assistance including bug fixes
     });
     firstCachePoint = secondCachePoint;
 
+    class MaxTokenExceededError {}
     const res = await pRetry(
       async () => {
         try {
           if (cancellationToken.isCancelled) return;
 
-          const res = await bedrockConverse(workerId, ['sonnet3.7'], {
-            messages,
-            system: [{ text: systemPrompt }, { cachePoint: { type: 'default' } }],
-            toolConfig,
-          });
+          const res = await bedrockConverse(
+            workerId,
+            ['sonnet3.7'],
+            {
+              messages,
+              system: [{ text: systemPrompt }, { cachePoint: { type: 'default' } }],
+              toolConfig,
+            },
+            maxTokensExceededCount
+          );
+
+          if (res.stopReason == 'max_tokens') {
+            maxTokensExceededCount += 1;
+            throw new MaxTokenExceededError();
+          }
           return res;
         } catch (e) {
           if (e instanceof ThrottlingException) {
             console.log(`retrying... ${e.message}`);
+            throw e;
+          }
+          if (e instanceof MaxTokenExceededError) {
+            console.log(`retrying... maxTokenExceeded ${maxTokensExceededCount} time(s)`);
             throw e;
           }
           console.log(e);
@@ -424,7 +445,7 @@ Users will primarily request software engineering assistance including bug fixes
       if (finalMessage?.content == null || finalMessage.content?.length == 0) {
         // It seems this happens sometimes. We can just ignore this message.
         console.log('final message is empty. ignoring...');
-        await sendSystemMessage(workerId, mention);
+        await sendSystemMessage(workerId, mention, true);
         break;
       }
 

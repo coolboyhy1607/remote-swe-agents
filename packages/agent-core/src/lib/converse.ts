@@ -17,6 +17,11 @@ const roleName = process.env.BEDROCK_AWS_ROLE_NAME || 'bedrock-remote-swe-role';
 // State management for persistent account selection and retry
 let currentAccountIndex = 0; // Currently used account index
 
+// Keywords for thinking budget adjustment
+const ULTRA_THINKING_KEYWORD = 'ultrathink';
+
+const defaultOutputTokenCount = 8192;
+
 const modelTypeSchema = z.enum(['sonnet3.5v1', 'sonnet3.5', 'sonnet3.7', 'haiku3.5', 'nova-pro', 'opus4', 'sonnet4']);
 type ModelType = z.infer<typeof modelTypeSchema>;
 
@@ -40,7 +45,7 @@ const modelConfigs: Record<ModelType, Partial<z.infer<typeof modelConfigSchema>>
     toolChoiceSupport: ['any', 'auto', 'tool'],
   },
   'sonnet3.7': {
-    maxOutputTokens: 8192,
+    maxOutputTokens: 64_000,
     maxInputTokens: 200_000,
     cacheSupport: ['system', 'message', 'tool'],
     reasoningSupport: true,
@@ -52,20 +57,20 @@ const modelConfigs: Record<ModelType, Partial<z.infer<typeof modelConfigSchema>>
     toolChoiceSupport: ['any', 'auto', 'tool'],
   },
   'nova-pro': {
-    maxOutputTokens: 5000,
+    maxOutputTokens: 10_000,
     maxInputTokens: 300_000,
     cacheSupport: ['system'],
     toolChoiceSupport: ['auto'],
   },
   opus4: {
-    maxOutputTokens: 8192,
+    maxOutputTokens: 32_000,
     maxInputTokens: 200_000,
     cacheSupport: ['system', 'message', 'tool'],
     reasoningSupport: true,
     toolChoiceSupport: ['any', 'auto', 'tool'],
   },
   sonnet4: {
-    maxOutputTokens: 8192,
+    maxOutputTokens: 64_000,
     maxInputTokens: 200_000,
     cacheSupport: ['system', 'message', 'tool'],
     reasoningSupport: true,
@@ -76,8 +81,12 @@ const modelConfigs: Record<ModelType, Partial<z.infer<typeof modelConfigSchema>>
 export const bedrockConverse = async (
   workerId: string,
   modelTypes: ModelType[],
-  input: Omit<ConverseCommandInput, 'modelId'>
+  input: Omit<ConverseCommandInput, 'modelId'>,
+  maxTokensExceededCount = 0
 ) => {
+  if (maxTokensExceededCount > 5) {
+    throw new Error(`Max tokens exceeded too many times (${maxTokensExceededCount})`);
+  }
   try {
     const modelOverride = modelTypeSchema
       .optional()
@@ -92,7 +101,8 @@ export const bedrockConverse = async (
           ...input,
           modelId,
         },
-        modelType
+        modelType,
+        maxTokensExceededCount
       )
     );
     const response = await client.send(command);
@@ -103,7 +113,7 @@ export const bedrockConverse = async (
     return response;
   } catch (error) {
     if (error instanceof ThrottlingException) {
-      // Simple rotation to next account
+      // Rotate to next account
       const previousIndex = currentAccountIndex;
       currentAccountIndex = (currentAccountIndex + 1) % awsAccounts.length;
       console.log(
@@ -114,7 +124,27 @@ export const bedrockConverse = async (
   }
 };
 
-const preProcessInput = (input: ConverseCommandInput, modelType: ModelType) => {
+const shouldUltraThink = (input: ConverseCommandInput): boolean => {
+  // Get the last user message to look for keywords
+  const messages = input.messages || [];
+  const lastUserMessage = messages
+    .filter((message) => message.role === 'user' && message.content?.some((c) => c.text != null))
+    .pop();
+  if (!lastUserMessage?.content) {
+    return false;
+  }
+
+  // Convert all content parts to string if possible to check for keywords
+  const messageText = lastUserMessage.content
+    .map((content) => ('text' in content ? content.text : ''))
+    .join(' ')
+    .toLowerCase();
+
+  // Check for the keywords to adjust thinking budget
+  return messageText.includes(ULTRA_THINKING_KEYWORD);
+};
+
+const preProcessInput = (input: ConverseCommandInput, modelType: ModelType, maxTokensExceededCount: number) => {
   const modelConfig = modelConfigSchema.parse(modelConfigs[modelType]);
   // we cannot use JSON.parse(JSON.stringify(input)) here because input sometimes contains Buffer object for image.
   input = structuredClone(input);
@@ -125,6 +155,10 @@ const preProcessInput = (input: ConverseCommandInput, modelType: ModelType) => {
       input.toolConfig.toolChoice = undefined;
     }
   }
+
+  // set maximum number of output tokens
+  const adjustedMaxToken = Math.min(modelConfig.maxOutputTokens, defaultOutputTokenCount * maxTokensExceededCount ** 2);
+  input.inferenceConfig = { ...input.inferenceConfig, maxTokens: adjustedMaxToken };
 
   // enable or disable reasoning
   let enableReasoning = false;
@@ -140,12 +174,24 @@ const preProcessInput = (input: ConverseCommandInput, modelType: ModelType) => {
       enableReasoning = true;
     }
   }
+
   if (enableReasoning) {
+    // Detect if we need to adjust the thinking budget based on keywords
+    const enableUltraThink = shouldUltraThink(input);
+    const budget = enableUltraThink ? Math.min(Math.floor(modelConfig.maxOutputTokens / 2), 31999) : 2000;
+
+    // Apply thinking budget settings
     input.additionalModelRequestFields = {
       reasoning_config: {
         type: 'enabled',
-        budget_tokens: 1024,
+        budget_tokens: budget,
       },
+    };
+
+    // Adjust output tokens as well
+    input.inferenceConfig = {
+      ...input.inferenceConfig,
+      maxTokens: Math.max(adjustedMaxToken, Math.min(budget * 2, modelConfig.maxOutputTokens)),
     };
   } else {
     // when we disable reasoning, we have to remove
@@ -157,10 +203,6 @@ const preProcessInput = (input: ConverseCommandInput, modelType: ModelType) => {
       return message;
     });
   }
-
-  // set maximum number of output tokens
-  input.inferenceConfig ??= { maxTokens: modelConfig.maxOutputTokens };
-
   // remove cachePoints if not supported
   if (!modelConfig.cacheSupport.includes('system') && input.system) {
     for (let i = input.system.length - 1; i >= 0; i--) {
