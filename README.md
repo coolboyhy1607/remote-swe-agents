@@ -304,13 +304,26 @@ After successful deployment, you can access the Remote SWE Agents system through
    - Respond to issue comments and assignments
    - Seamless CI/CD integration
 
-For tips on how to effectively use the agents, refer to the "Useful Tips" section below.
+For tips on how to effectively use the agents, refer to the [Useful Tips](#useful-tips) section.
 
 ### GitHub Actions Integration
 
 This repository can be used as a GitHub Action to automatically trigger Remote SWE agents from GitHub events like issue comments, assignments, and PR reviews. The GitHub Action uses the Remote SWE API functionality to create and manage agent sessions.
 
 Use `aws-samples/remote-swe-agents` in your workflow and configure your API base URL and key as repository secrets. You can generate API keys from the deployed webapp interface. See [action.yml](./action.yml) for input parameters and [.github/workflows/remote-swe.yml](./.github/workflows/remote-swe.yml) for a complete example workflow.
+
+### Tenant Isolation Model
+
+This project is currently designed as a single-tenant system, meaning it is intended to be deployed on a per-tenant basis.
+
+Since it follows a completely pay-as-you-go model, the overhead of deploying multiple instances is minimal in terms of infrastructure costs.
+
+To control access for each tenant, you have the following access permission configurations:
+
+1. **Slack App**: You can set the `SLACK_ADMIN_USER_ID_LIST` environment variable in CDK to deny access from non-permitted users. You can then add allowed users using the `approve_user` Slack command.
+2. **Webapp**: Cognito self-sign-up is disabled by default. You can add users from the Cognito management console. Currently, anyone with a Cognito account has equal permissions. Users can configure the system, create new sessions, issue API keys, or view cost analysis from the web UI.
+3. **REST API**: Anyone who knows the API keys can access it. You should delete keys that are no longer in use.
+4. **GitHub Actions**: Anyone with write access to the repository (i.e., collaborators) can invoke the action.
 
 ## Useful Tips
 
