@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import Header from '@/components/Header';
-import { ArrowLeft, ListChecks, Check, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, ListChecks, Check, Plus, Loader2, Share } from 'lucide-react';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
 import Link from 'next/link';
 import { useAction } from 'next-safe-action/hooks';
@@ -23,6 +23,7 @@ import { fetchLatestTodoList } from '../actions';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { formatMessage } from '@/lib/message-formatter';
+import TakeOverModal from './TakeOverModal';
 
 interface SessionPageClientProps {
   workerId: string;
@@ -64,6 +65,7 @@ export default function SessionPageClient({
   }, [initialTodoList]);
 
   const [showTodoModal, setShowTodoModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const { isBottom, isHeaderVisible } = useScrollPosition();
 
   // Setup event handler for Escape key press to force stop agent work
@@ -351,6 +353,8 @@ export default function SessionPageClient({
           </div>
         )}
 
+        <TakeOverModal workerId={workerId} isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
+
         <MessageList
           messages={messages}
           instanceStatus={instanceStatus}
@@ -358,7 +362,7 @@ export default function SessionPageClient({
           onInterrupt={handleInterrupt}
         />
 
-        <MessageForm onSubmit={onSendMessage} workerId={workerId} />
+        <MessageForm onSubmit={onSendMessage} workerId={workerId} onShareSession={() => setShowShareModal(true)} />
 
         {/* Scroll buttons */}
         <div className="fixed bottom-24 right-6 flex flex-col gap-2 z-10">

@@ -80,7 +80,13 @@
     "incomplete": "Incomplete",
     "interrupt": "Interrupt",
     "interruptToolTip": "Interrupt (or press Escape)",
-    "initiatedByOtherUsers": "Initiated by other users"
+    "initiatedByOtherUsers": "Initiated by other users",
+    "attachImage": "Attach image",
+    "shareSession": "Take Over Session",
+    "shareSessionDescription": "Post this text to Slack with an app mention to send messages to the session and receive notifications.",
+    "copyToClipboard": "Copy to Clipboard",
+    "share": "Share",
+    "copiedToClipboard": "Copied to clipboard"
   },
   "home": {
     "title": "Welcome to Remote SWE Agents",

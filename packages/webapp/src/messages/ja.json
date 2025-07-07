@@ -80,7 +80,13 @@
     "incomplete": "未完了",
     "interrupt": "中断",
     "interruptToolTip": "Escapeキーで中断",
-    "initiatedByOtherUsers": "他のユーザーが開始"
+    "initiatedByOtherUsers": "他のユーザーが開始",
+    "attachImage": "画像を添付",
+    "shareSession": "セッションを引き継ぎ",
+    "shareSessionDescription": "このテキストをアプリへのメンション付きでSlackに投稿すると、セッションにSlackからメッセージを送ったり通知を受信したりできます。",
+    "copyToClipboard": "クリップボードにコピー",
+    "share": "共有",
+    "copiedToClipboard": "クリップボードにコピーしました"
   },
   "home": {
     "title": "Remote SWE Agents へようこそ",
