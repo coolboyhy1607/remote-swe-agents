@@ -256,14 +256,14 @@ download_fresh_files() {
   echo "Downloading fresh source files."
   # Clean up existing files
   rm -rf ./{*,.*} 2>/dev/null || echo "Cleaning up existing files"
-  
+
   # Download source code from S3
   aws s3 cp s3://$S3_BUCKET_NAME/source/$SOURCE_TAR_NAME ./$SOURCE_TAR_NAME
-  
+
   # Extract and clean up
   tar -xvzf $SOURCE_TAR_NAME
   rm -f $SOURCE_TAR_NAME
-  
+
   # Install dependencies and build
   npm ci
   npm run build -w packages/agent-core
@@ -277,13 +277,17 @@ download_fresh_files() {
   echo "$CURRENT_ETAG" > "$ETAG_FILE"
 }
 
+# Install mise
+curl https://mise.run | bash
+echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+
 # Get current ETag from S3
 CURRENT_ETAG=$(aws s3api head-object --bucket $S3_BUCKET_NAME --key source/$SOURCE_TAR_NAME --query ETag --output text)
 
 # Check if we can use cached source code
 if [ -f "$ETAG_FILE" ]; then
   CACHED_ETAG=$(cat $ETAG_FILE)
-  
+
   if [ "$CURRENT_ETAG" == "$CACHED_ETAG" ]; then
     echo "ETag matches. Using existing source files."
     # Files are already in place, no need to do anything
